@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Central de Ajuda - Onboarding de Novos Funcionários</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <header class="main-header">
+        <div class="container">
+            <a href="index.html" class="logo">Central de Ajuda</a>
+            <nav>
+                <ul>
+                    <li><a href="#inicio">Início</a></li>
+                    <li><a href="#quemsomos">Quem Somos</a></li>
+                    <li><a href="#abrirchamado">Abrir Chamado</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        
+        <section id="inicio" class="page-section">
+            <div class="search-banner">
+                <h2>Olá! Como podemos ajudar?</h2>
+                <input type="search" placeholder="Pesquise por processos, benefícios, etc...">
+            </div>
+
+            <div class="articles-grid">
+                <h3>Artigos Populares</h3>
+                
+                <a href="#" class="article-card">
+                    <h4>Primeiros Passos na Empresa</h4>
+                    <p>Um guia completo sobre o que fazer na sua primeira semana.</p>
+                </a>
+                
+                <a href="#" class="article-card">
+                    <h4>Política de Férias e Licenças</h4>
+                    <p>Entenda como solicitar seus dias de descanso e quais são as regras.</p>
+                </a>
+
+                <a href="#" class="article-card">
+                    <h4>Benefícios Corporativos</h4>
+                    <p>Conheça o plano de saúde, vale-refeição e outros benefícios.</p>
+                </a>
+
+                <a href="#" class="article-card">
+                    <h4>Ferramentas de Trabalho</h4>
+                    <p>Veja como acessar o e-mail, sistema interno e outras ferramentas essenciais.</p>
+                </a>
+
+                 <a href="#" class="article-card">
+                    <h4>Código de Conduta</h4>
+                    <p>Nossas diretrizes para um ambiente de trabalho respeitoso e produtivo.</p>
+                </a>
+
+                 <a href="#" class="article-card">
+                    <h4>Estrutura de Departamentos</h4>
+                    <p>Quem faz o quê? Conheça os principais departamentos da empresa.</p>
+                </a>
+            </div>
+        </section>
+
+        <section id="quemsomos" class="page-section" style="display: none;">
+             <h2>Nossa História</h2>
+            <p>Aqui você pode inserir um texto contando a história da empresa. Fale sobre a fundação, a missão, a visão e os valores. É o primeiro contato do novo funcionário com a cultura da organização. Por exemplo: "Fundada em 2010 com o objetivo de revolucionar o mercado, nossa empresa cresceu e se tornou líder no setor, sempre valorizando a inovação e nossos colaboradores."</p>
+            <p>Nossa missão é [descrever a missão]. Nossa visão de futuro é [descrever a visão]. E nossos valores são [listar os valores].</p>
+        </section>
+
+        <section id="abrirchamado" class="page-section" style="display: none;">
+            <h2>Abrir um Chamado</h2>
+            <p>Se não encontrou o que procurava em nossos artigos ou com o assistente virtual, abra um chamado para nosso time de suporte.</p>
+            <form class="chamado-form">
+                <label for="nome">Seu Nome:</label>
+                <input type="text" id="nome" name="nome" placeholder="Digite seu nome completo">
+
+                <label for="departamento">Seu Departamento:</label>
+                <input type="text" id="departamento" name="departamento" placeholder="Ex: Marketing, TI, Vendas">
+
+                <label for="assunto">Descreva seu problema:</label>
+                <textarea id="assunto" name="assunto" rows="4" placeholder="Descreva sua dúvida ou problema em detalhes..."></textarea>
+
+                <button type="button">Enviar Chamado (Apenas Demonstração)</button>
+            </form>
+        </section>
+
+    </main>
+
+    <div class="chatbot-container">
+        <div class="chat-header">
+            <h2>Assistente de Onboarding</h2>
+        </div>
+        <div class="chat-messages" id="chat-messages">
+    <div class="message bot-message">
+        <p>Olá! Sou seu assistente virtual da Chata da Eschiley. Como posso ajudar com os processos da empresa hoje?</p>
+    </div>
+    
+    <div class="message bot-message" id="typing-indicator" style="display: none;">
+        <p class="typing-dots">
+            <span>.</span><span>.</span><span>.</span>
+        </p>
+    </div>
+    
+</div>
+        <div class="chat-input">
+            <input type="text" id="user-input" placeholder="Digite sua pergunta...">
+            <button id="send-btn">Enviar</button>
+        </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>

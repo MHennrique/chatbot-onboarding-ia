@@ -1,0 +1,4 @@
+Para solicitar férias, o funcionário deve seguir os seguintes passos:
+* **Passo 1:** Acessar o Portal RH com 30 dias de antecedência.
+* **Passo 2:** Clicar na seção "Minhas Férias".
+* **Passo 3:** Preencher o formulário e enviar para aprovação.
