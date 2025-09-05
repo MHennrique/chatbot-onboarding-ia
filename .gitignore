@@ -5,6 +5,8 @@
 .venv/
 venv/
 
+.assets/
+
 # Arquivos de cache do Python
 __pycache__/
 

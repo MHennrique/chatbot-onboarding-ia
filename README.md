@@ -11,8 +11,8 @@ Um chatbot inteligente projetado para facilitar o processo de onboarding de novo
 
 Aqui você pode adicionar um GIF do seu chatbot em ação! Ferramentas como **ScreenToGif** ou **LICEcap** são ótimas e fáceis de usar para gravar a tela.
 
-![Demonstração do Chatbot](https://i.imgur.com/vHqJ9Uj.png) 
-*(Substitua esta imagem por um GIF do seu projeto)*
+![Demonstração do Chatbot](assets/Gravando%202025-09-05%20162631.gif) 
+
 
 ---
 
