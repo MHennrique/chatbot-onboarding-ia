@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Processo de Solicitação de Férias | Rocha Alimentos</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700&family=Merriweather:wght@700&display=swap" rel="stylesheet">
+    <style>
+        /* Estilos de Artigo Unificado (usados em mvv_historia.html) */
+        #content-right {
+            background-color: var(--color-rocha-light);
+            color: var(--color-rocha-green);
+            padding: 40px;
+            overflow-y: auto;
+        }
+
+        .article-content {
+            background-color: var(--color-rocha-light);
+            color: var(--color-rocha-green);
+            padding: 0;
+            margin: 0;
+            min-height: 100%;
+            box-sizing: border-box;
+        }
+
+        .article-content h1 {
+            color: var(--color-rocha-green);
+            border-bottom: 2px solid var(--color-rocha-accent);
+            padding-bottom: 10px;
+            margin-bottom: 25px;
+            font-size: 2.5rem;
+        }
+        
+        .step-card {
+            background: #fff;
+            padding: 20px;
+            border-left: 5px solid var(--color-rocha-accent); /* Linha lateral verde para destaque */
+            margin-bottom: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            color: #343a40; /* Texto do card mais escuro para contraste */
+        }
+
+        .step-card h2 {
+            margin-top: 0;
+            color: var(--color-rocha-accent);
+            font-size: 1.5rem;
+            font-family: 'Merriweather', serif;
+        }
+        
+        .back-link {
+            display: none; /* Não é necessário com a barra lateral */
+        }
+    </style>
+</head>
+<body>
+
+    <div id="app-container">
+        
+        <aside id="sidebar-left">
+            <div class="logo-area">
+                <img src="./assets/image.png" alt="Logo Rocha Alimentos">
+            </div>
+
+            <nav class="main-menu">
+                <ul>
+                    <li><a href="index.html">🏠 Início</a></li>
+                    <li><a href="mvv_historia.html">📜 História, Missão e Visão</a></li> 
+                    <li><a href="contato.html">📞 Contato / Abrir Chamado</a></li>
+                </ul>
+            </nav>
+
+            <div id="topics-content">
+                <h3 class="merriweather">Artigos Populares</h3>
+                
+                <a href="artigo_ferias.html" class="article-link active">
+                    <h4>Política de Férias e Licenças</h4>
+                </a>
+                
+                <a href="artigo_beneficios.html" class="article-link">
+                    <h4>Benefícios Corporativos</h4>
+                </a>
+
+                <a href="#" class="article-link">
+                    <h4>Ferramentas de Trabalho</h4>
+                </a>
+            </div>
+        </aside>
+
+        <main id="content-right">
+            
+            <div class="article-content">
+                <h1 class="merriweather">Solicitação de Férias na Rocha Alimentos</h1>
+
+                <p>Entenda o processo completo e as diretrizes para garantir que sua solicitação de descanso seja aprovada sem contratempos. O planejamento é essencial para o bom funcionamento do seu departamento.</p>
+
+                <div class="step-card">
+                    <h2>✅ Passo 1: Acesso e Prazo (30 Dias)</h2>
+                    <p><strong>Acesse:</strong> O processo deve ser iniciado no Portal RH (Sistema 'Recursos Humanos Web'), disponível na intranet da empresa ou em <a href="#">portal-rh.rocha.com.br</a>.</p>
+                    <p><strong>Prazo:</strong> A solicitação deve ser feita com, no mínimo, **30 dias de antecedência** da data de início desejada. Solicitações fora desse prazo podem ser negadas devido ao planejamento operacional.</p>
+                </div>
+
+                <div class="step-card">
+                    <h2>📅 Passo 2: Seleção e Configuração</h2>
+                    <p>Dentro do Portal RH, navegue até a seção **"Minhas Férias"**. Utilize o calendário para selecionar o período exato de dias corridos que você deseja tirar. Você também poderá escolher se deseja vender (abono pecuniário) ou não parte de suas férias, conforme as diretrizes da CLT e da empresa.</p>
+                </div>
+
+                <div class="step-card">
+                    <h2>📧 Passo 3: Envio e Aprovação Gerencial</h2>
+                    <p>Após preencher o formulário, clique em **"Enviar para Aprovação"**. O sistema encaminhará automaticamente o pedido para seu gestor direto.</p>
+                    <ul>
+                        <li>O status do pedido pode ser acompanhado em tempo real no mesmo Portal RH.</li>
+                        <li>Se aprovado, o RH será notificado para processar o pagamento do abono de férias (se aplicável).</li>
+                        <li>Se negado, o gestor deixará um comentário explicando o motivo (geralmente conflito de escala) e o processo deve ser reiniciado.</li>
+                    </ul>
+                </div>
+                
+            </div>
+            
+        </main>
+        
+    </div>
+</body>
+</html>

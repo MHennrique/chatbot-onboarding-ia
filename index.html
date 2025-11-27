@@ -3,113 +3,69 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Central de Ajuda - Onboarding de Novos Funcionários</title>
+    <title>Central de Ajuda | Rocha Alimentos</title>
     <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700&family=Merriweather:wght@700&display=swap" rel="stylesheet">
 </head>
 <body>
 
-    <header class="main-header">
-        <div class="container">
-            <a href="index.html" class="logo">Central de Ajuda</a>
-            <nav>
-                <ul>
-                    <li><a href="#inicio">Início</a></li>
-                    <li><a href="#quemsomos">Quem Somos</a></li>
-                    <li><a href="#abrirchamado">Abrir Chamado</a></li>
-                </ul>
-            </nav>
-        </div>
-    </header>
-
-    <main class="container">
+    <div id="app-container">
         
-        <section id="inicio" class="page-section">
-            <div class="search-banner">
-                <h2>Olá! Como podemos ajudar?</h2>
-                <input type="search" placeholder="Pesquise por processos, benefícios, etc...">
+        <aside id="sidebar-left">
+            <div class="logo-area">
+                <img src="./assets/image.png" alt="Logo Rocha Alimentos">
             </div>
 
-            <div class="articles-grid">
-                <h3>Artigos Populares</h3>
+        <nav class="main-menu">
+                <ul>
+                <li><a href="#inicio" class="active">🏠 Início</a></li>
+                <li><a href="mvv_historia.html">📜 História, Missão e Visão</a></li> 
+                <li><a href="contato.html">📞 Contato / Abrir Chamado</a></li>
+            </ul>
+        </nav>
+
+            <div id="topics-content">
+                <h3 class="merriweather">Artigos Populares</h3>
                 
-                <a href="#" class="article-card">
-                    <h4>Primeiros Passos na Empresa</h4>
-                    <p>Um guia completo sobre o que fazer na sua primeira semana.</p>
-                </a>
-                
-                <a href="#" class="article-card">
+                <a href="artigo_ferias.html" class="article-link">
                     <h4>Política de Férias e Licenças</h4>
-                    <p>Entenda como solicitar seus dias de descanso e quais são as regras.</p>
                 </a>
-
-                <a href="#" class="article-card">
+                
+                <a href="artigo_beneficios.html" class="article-link">
                     <h4>Benefícios Corporativos</h4>
-                    <p>Conheça o plano de saúde, vale-refeição e outros benefícios.</p>
                 </a>
 
-                <a href="#" class="article-card">
+                <a href="#" class="article-link">
                     <h4>Ferramentas de Trabalho</h4>
-                    <p>Veja como acessar o e-mail, sistema interno e outras ferramentas essenciais.</p>
                 </a>
+                
+                </div>
+        </aside>
 
-                 <a href="#" class="article-card">
-                    <h4>Código de Conduta</h4>
-                    <p>Nossas diretrizes para um ambiente de trabalho respeitoso e produtivo.</p>
-                </a>
-
-                 <a href="#" class="article-card">
-                    <h4>Estrutura de Departamentos</h4>
-                    <p>Quem faz o quê? Conheça os principais departamentos da empresa.</p>
-                </a>
+        <main id="chat-right">
+            <div class="chat-header-main">
+                <h1 class="merriweather">🤖 Assistente de Onboarding</h1>
+                <p>Olá! Digite sua dúvida sobre processos, benefícios ou estrutura da Rocha Alimentos.</p>
             </div>
-        </section>
+            
+            <div class="chat-messages" id="chat-messages">
+                <div class="message bot">
+                    <p>Olá! Sou seu assistente virtual. Como posso ajudar com os processos da empresa hoje?</p>
+                </div>
+                
+                <div class="typing-indicator" id="typing-indicator" style="display: none;">
+                    <span>.</span><span>.</span><span>.</span>
+                </div>
+            </div>
 
-        <section id="quemsomos" class="page-section" style="display: none;">
-             <h2>Nossa História</h2>
-            <p>Aqui você pode inserir um texto contando a história da empresa. Fale sobre a fundação, a missão, a visão e os valores. É o primeiro contato do novo funcionário com a cultura da organização. Por exemplo: "Fundada em 2010 com o objetivo de revolucionar o mercado, nossa empresa cresceu e se tornou líder no setor, sempre valorizando a inovação e nossos colaboradores."</p>
-            <p>Nossa missão é [descrever a missão]. Nossa visão de futuro é [descrever a visão]. E nossos valores são [listar os valores].</p>
-        </section>
-
-        <section id="abrirchamado" class="page-section" style="display: none;">
-            <h2>Abrir um Chamado</h2>
-            <p>Se não encontrou o que procurava em nossos artigos ou com o assistente virtual, abra um chamado para nosso time de suporte.</p>
-            <form class="chamado-form">
-                <label for="nome">Seu Nome:</label>
-                <input type="text" id="nome" name="nome" placeholder="Digite seu nome completo">
-
-                <label for="departamento">Seu Departamento:</label>
-                <input type="text" id="departamento" name="departamento" placeholder="Ex: Marketing, TI, Vendas">
-
-                <label for="assunto">Descreva seu problema:</label>
-                <textarea id="assunto" name="assunto" rows="4" placeholder="Descreva sua dúvida ou problema em detalhes..."></textarea>
-
-                <button type="button">Enviar Chamado (Apenas Demonstração)</button>
-            </form>
-        </section>
-
-    </main>
-
-    <div class="chatbot-container">
-        <div class="chat-header">
-            <h2>Assistente de Onboarding</h2>
-        </div>
-        <div class="chat-messages" id="chat-messages">
-    <div class="message bot-message">
-        <p>Olá! Sou seu assistente virtual da Chata da Eschiley. Como posso ajudar com os processos da empresa hoje?</p>
+            <div class="chat-input-area">
+                <input type="text" id="user-input" placeholder="Digite sua pergunta...">
+                <button id="send-button">Enviar</button>
+            </div>
+        </main>
+        
     </div>
-    
-    <div class="message bot-message" id="typing-indicator" style="display: none;">
-        <p class="typing-dots">
-            <span>.</span><span>.</span><span>.</span>
-        </p>
-    </div>
-    
-</div>
-        <div class="chat-input">
-            <input type="text" id="user-input" placeholder="Digite sua pergunta...">
-            <button id="send-btn">Enviar</button>
-        </div>
-    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <script src="script.js"></script>
 </body>

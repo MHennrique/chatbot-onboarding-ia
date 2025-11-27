@@ -1,11 +1,13 @@
+# app.py
+
 import os
 from dotenv import load_dotenv
 from flask import Flask, request, jsonify
 from flask_cors import CORS
-import docx
-import pandas as pd
-import PyPDF2
 import google.generativeai as genai
+
+# Importa a base de conhecimento pronta do nosso novo módulo
+from knowledge_base import CONTEUDO_EMPRESA
 
 # Carrega as variáveis de ambiente do arquivo .env
 load_dotenv()
@@ -17,51 +19,35 @@ genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
 app = Flask(__name__)
 CORS(app, resources={r"/ask": {"origins": "http://127.0.0.1:5500"}})
 
-# --- PARTE 1: LER OS DOCUMENTOS ---
-def ler_documentos_pasta(caminho_pasta):
-    """Lê todos os arquivos .txt, .docx, .pdf e .csv de uma pasta."""
-    base_conhecimento = ""
-    print(f"Lendo documentos de: {caminho_pasta}")
-
-    for nome_arquivo in os.listdir(caminho_pasta):
-        caminho_completo = os.path.join(caminho_pasta, nome_arquivo)
-        try:
-            if nome_arquivo.endswith(".txt"):
-                with open(caminho_completo, 'r', encoding='utf-8') as f:
-                    base_conhecimento += f.read() + "\n"
-            elif nome_arquivo.endswith(".docx"):
-                doc = docx.Document(caminho_completo)
-                for para in doc.paragraphs:
-                    base_conhecimento += para.text + "\n"
-            elif nome_arquivo.endswith(".pdf"):
-                with open(caminho_completo, 'rb') as f:
-                    reader = PyPDF2.PdfReader(f)
-                    for page in reader.pages:
-                        base_conhecimento += page.extract_text() + "\n"
-            # NOVO BLOCO para ler arquivos .csv
-            elif nome_arquivo.endswith(".csv"):
-                df = pd.read_csv(caminho_completo)
-                base_conhecimento += df.to_string() + "\n"
-
-            print(f"  - Arquivo '{nome_arquivo}' lido com sucesso.")
-        except Exception as e:
-            print(f"Erro ao ler o arquivo {nome_arquivo}: {e}")
-            
-    return base_conhecimento
-
-CONTEUDO_EMPRESA = ler_documentos_pasta('documentos')
-print("\nBase de conhecimento carregada com sucesso!")
+# Confirma que a base de conhecimento foi carregada (apenas para debug)
+print(f"Conteúdo da empresa importado (Tamanho: {len(CONTEUDO_EMPRESA)} caracteres)")
 
 
-# --- MUDANÇA 1: FUNÇÃO DE IA ATUALIZADA PARA USAR HISTÓRICO ---
+# --- FUNÇÃO DE IA ATUALIZADA PARA USAR HISTÓRICO ---
 def obter_resposta_ia(pergunta_usuario, base_conhecimento, historico_conversa):
     """Inicia um chat com o Gemini, usando o histórico para manter o contexto."""
     
-    model = genai.GenerativeModel('gemini-1.5-flash')
+    model = genai.GenerativeModel('gemini-2.5-flash')
 
-    # Instrução inicial para o chatbot
+    # Instrução inicial para o chatbot (mantida a mesma lógica de linkagem)
     instrucao_sistema = f"""
-    Você é um chatbot de onboarding. Responda perguntas baseando-se ESTRITAMENTE no CONTEÚDO fornecido abaixo.
+    Você é um chatbot de onboarding da Rocha Alimentos. Responda perguntas baseando-se ESTRITAMENTE no CONTEÚDO fornecido abaixo.
+    
+    Regras de Link:
+    1. Se a pergunta for sobre 'férias', 'solicitar férias' ou 'como tirar férias', inclua OBRIGATORIAMENTE a seguinte linha no final da sua resposta:
+       
+       Para o processo completo e detalhado, acesse: [Processo Completo de Férias](artigo_ferias.html)
+
+    2. Se a pergunta for sobre 'missão', 'visão', 'valores' ou 'história da empresa':
+       - Responda apenas com a informação específica solicitada (ex: se perguntar "missão", responda apenas a missão).
+       - Em seguida, inclua OBRIGATORIAMENTE a seguinte linha no final da sua resposta:
+    
+       Para conhecer nossa História, Missão e Valores completos, acesse: [Nossa Identidade](mvv_historia.html)
+
+    3. Se a pergunta for sobre 'benefícios', 'plano de saúde', 'vale alimentação' ou 'auxílio educação', inclua OBRIGATORIAMENTE a seguinte linha no final da sua resposta:
+       
+       Para ver o detalhe completo dos benefícios e valores, acesse: [Detalhamento de Benefícios](artigo_beneficios.html)
+
     Se a resposta não estiver no CONTEÚDO, diga: 'Desculpe, não encontrei essa informação nos meus documentos.'.
     Não invente informações.
 
@@ -73,7 +59,6 @@ def obter_resposta_ia(pergunta_usuario, base_conhecimento, historico_conversa):
     
     # Prepara o histórico para o modelo, começando com a instrução do sistema
     historico_formatado = [{"role": "user", "parts": [instrucao_sistema]}]
-    # O Gemini espera uma resposta do 'model' após a instrução, vamos simular uma.
     historico_formatado.append({"role": "model", "parts": ["Entendido. Estou pronto para responder com base no conteúdo fornecido."]})
     
     # Adiciona o histórico da conversa real
@@ -89,19 +74,19 @@ def obter_resposta_ia(pergunta_usuario, base_conhecimento, historico_conversa):
         print(f"Erro na API do Google Gemini: {e}")
         return "Ocorreu um erro ao me conectar com a inteligência artificial."
 
-# --- MUDANÇA 2: ROTA DA API ATUALIZADA PARA RECEBER O HISTÓRICO ---
+# --- ROTA DA API ---
 @app.route('/ask', methods=['POST'])
 def ask_chatbot():
     """Recebe a pergunta e o histórico do site."""
     dados = request.json
     pergunta = dados.get('question')
-    # Recebe o histórico, ou uma lista vazia se não houver
     historico = dados.get('history', [])
 
     if not pergunta:
         return jsonify({"error": "Nenhuma pergunta foi fornecida"}), 400
 
-    resposta = obter_resposta_ia(pergunta, CONTEUDO_EMPRESA, historico)
+    # Passa o conteúdo importado para a função
+    resposta = obter_resposta_ia(pergunta, CONTEUDO_EMPRESA, historico) 
     
     return jsonify({"answer": resposta})
 

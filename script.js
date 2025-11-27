@@ -1,7 +1,5 @@
 document.addEventListener('DOMContentLoaded', () => {
-    // --- CÓDIGO DE NAVEGAÇÃO ---
-    // (Esta parte permanece igual)
-    const navLinks = document.querySelectorAll('nav a');
+   /* const navLinks = document.querySelectorAll('nav a');
     const sections = document.querySelectorAll('.page-section');
     function showSection(targetId) {
         sections.forEach(section => {
@@ -15,27 +13,24 @@ document.addEventListener('DOMContentLoaded', () => {
             showSection(targetId);
         });
     });
-    showSection('inicio');
+    showSection('inicio');*/
 
     // --- CÓDIGO DO CHATBOT ---
     const chatMessages = document.getElementById('chat-messages');
     const userInput = document.getElementById('user-input');
-    const sendBtn = document.getElementById('send-btn');
+    const sendBtn = document.getElementById('send-button');
     const typingIndicator = document.getElementById('typing-indicator');
 
     // MUDANÇA 1: Array para guardar o histórico da conversa
     let conversationHistory = [];
 
     function addMessage(message, sender) {
-        // MUDANÇA 2: Adiciona a mensagem ao histórico
-        // O formato {role, parts} é o que a API do Gemini espera
         if (sender === 'user') {
             conversationHistory.push({ role: 'user', parts: [message] });
         } else if (sender === 'bot') {
             conversationHistory.push({ role: 'model', parts: [message] });
         }
         
-        // O resto da função de exibir a mensagem permanece igual
         const messageElement = document.createElement('div');
         messageElement.classList.add('message', sender === 'user' ? 'user-message' : 'bot-message');
         const pElement = document.createElement('p');
@@ -59,13 +54,12 @@ document.addEventListener('DOMContentLoaded', () => {
         chatMessages.scrollTop = chatMessages.scrollHeight;
 
         try {
-            // MUDANÇA 3: Envia a pergunta E o histórico para o backend
             const response = await fetch('http://127.0.0.1:5000/ask', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ 
                     question: question,
-                    history: conversationHistory.slice(0, -1) // Envia o histórico SEM a última pergunta do usuário
+                    history: conversationHistory.slice(0, -1) 
                 })
             });
 
@@ -76,7 +70,6 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (error) {
             console.error('Erro ao buscar resposta:', error);
             addMessage('Desculpe, não consegui me conectar ao meu cérebro.', 'bot');
-            // Remove a última pergunta do usuário do histórico em caso de erro
             conversationHistory.pop();
         } finally {
             typingIndicator.style.display = 'none';

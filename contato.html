@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contato e Suporte | Rocha Alimentos</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700&family=Merriweather:wght@700&display=swap" rel="stylesheet">
+    <style>
+        /* Estilos base do artigo para a área de conteúdo */
+        #content-right {
+            background-color: var(--color-rocha-light);
+            color: var(--color-rocha-green);
+            padding: 40px;
+            overflow-y: auto;
+        }
+
+        #content-right h1 {
+            color: var(--color-rocha-green);
+            border-bottom: 2px solid var(--color-rocha-accent);
+            padding-bottom: 10px;
+            margin-bottom: 30px;
+            font-size: 2.5rem;
+        }
+        
+        .contact-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr; /* Duas colunas */
+            gap: 40px;
+            margin-top: 20px;
+        }
+
+        .section-card {
+            background: #fff;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .section-card h2 {
+            font-family: 'Merriweather', serif;
+            color: var(--color-rocha-green);
+            margin-top: 0;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #eee;
+            margin-bottom: 20px;
+        }
+
+        /* Estilos do Formulário */
+        .contact-form label {
+            display: block;
+            margin-top: 15px;
+            font-weight: 700;
+            color: #343a40;
+        }
+
+        .contact-form input[type="text"],
+        .contact-form input[type="email"],
+        .contact-form textarea {
+            width: 100%;
+            padding: 10px;
+            margin-top: 5px;
+            border: 1px solid #ced4da;
+            border-radius: 5px;
+            box-sizing: border-box;
+            font-family: 'Lato', sans-serif;
+            font-size: 1rem;
+        }
+
+        .contact-form textarea {
+            resize: vertical;
+        }
+
+        .submit-btn {
+            background-color: var(--color-rocha-green);
+            color: white;
+            padding: 12px 25px;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            margin-top: 25px;
+            font-weight: 700;
+            transition: background-color 0.2s;
+        }
+        .submit-btn:hover {
+            background-color: var(--color-rocha-accent);
+        }
+
+        /* Estilos Zortea Solutions (Diferenciação Visual) */
+        .zortea-support {
+            border: 2px solid #0077b6; /* Cor principal da Zortea */
+            background-color: #f0f8ff; /* Fundo levemente azulado */
+        }
+        .zortea-support h2 {
+            color: #0077b6; /* Título azul */
+        }
+        .zortea-support .zortea-logo {
+            max-width: 150px;
+            margin-top: 15px;
+            display: block;
+        }
+        .zortea-support .submit-btn {
+            background-color: #0077b6; /* Botão azul */
+        }
+        .zortea-support .submit-btn:hover {
+             background-color: #0096c7;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="app-container">
+        
+        <aside id="sidebar-left">
+            <div class="logo-area">
+                <img src="./assets/image.png" alt="Logo Rocha Alimentos">
+            </div>
+
+            <nav class="main-menu">
+                <ul>
+                    <li><a href="index.html">🏠 Início</a></li>
+                    <li><a href="mvv_historia.html">📜 História, Missão e Visão</a></li> 
+                    <li><a href="contato.html" class="active">📞 Contato / Abrir Chamado</a></li>
+                </ul>
+            </nav>
+
+            <div id="topics-content">
+                <h3 class="merriweather">Artigos Populares</h3>
+                
+                <a href="artigo_ferias.html" class="article-link">
+                    <h4>Política de Férias e Licenças</h4>
+                </a>
+                
+                <a href="artigo_beneficios.html" class="article-link">
+                    <h4>Benefícios Corporativos</h4>
+                </a>
+
+                <a href="#" class="article-link">
+                    <h4>Ferramentas de Trabalho</h4>
+                </a>
+            </div>
+        </aside>
+
+        <main id="content-right">
+            
+            <h1>Canais de Comunicação e Suporte</h1>
+
+            <div class="contact-grid">
+                
+                <div class="section-card">
+                    <h2>Dúvidas Internas (Rocha)</h2>
+                    <p>Use este formulário para falar com o **Departamento de Recursos Humanos (RH)** ou **TI (Infraestrutura)** da Rocha Alimentos.</p>
+                    
+                    <form class="contact-form">
+                        <label for="nome_rocha">Seu Nome</label>
+                        <input type="text" id="nome_rocha" name="nome_rocha" required>
+
+                        <label for="email_rocha">Seu E-mail (Corporativo)</label>
+                        <input type="email" id="email_rocha" name="email_rocha" required>
+                        
+                        <label for="assunto_rocha">Detalhe sua Dúvida ou Problema</label>
+                        <textarea id="assunto_rocha" name="assunto_rocha" rows="5" required></textarea>
+
+                        <button type="submit" class="submit-btn">Enviar Dúvida ao RH/TI</button>
+                    </form>
+                </div>
+
+                <div class="section-card zortea-support">
+                    <h2>Suporte Técnico (Zortea Solutions)</h2>
+                    <p>Se você encontrou um **bug, erro de resposta do Chatbot** ou problema com a interface do sistema de Onboarding, preencha o formulário abaixo para abrir um chamado com a equipe técnica.</p>
+                    
+                    <img src="./assets/zortea.jpg" alt="Logo Zortea Solutions" class="zortea-logo">
+
+                    <form class="contact-form">
+                        <label for="nome_zortea">Seu Nome</label>
+                        <input type="text" id="nome_zortea" name="nome_zortea" required>
+
+                        <label for="bug_zortea">Tipo de Problema (Resposta Errada, Botão Quebrado, etc.)</label>
+                        <input type="text" id="bug_zortea" name="bug_zortea" required>
+                        
+                        <label for="descricao_zortea">Descrição do Problema</label>
+                        <textarea id="descricao_zortea" name="descricao_zortea" rows="5" required></textarea>
+
+                        <button type="submit" class="submit-btn">Abrir Chamado (Zortea)</button>
+                    </form>
+                </div>
+
+            </div>
+            
+        </main>
+        
+    </div>
+</body>
+</html>
