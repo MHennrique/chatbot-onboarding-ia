@@ -19,19 +19,19 @@
         <nav class="main-menu">
                 <ul>
                 <li><a href="{{ url_for('index') }}" class="active">🏠 Início</a></li>
-                <li><a href="{{ url_for('static', filename='../templates/mvv_historia.html') }}">📜 História, Missão e Visão</a></li> 
-                <li><a href="{{ url_for('static', filename='../templates/contato.html') }}">📞 Contato / Abrir Chamado</a></li>
+                <li><a href="{{ url_for('mvv_page') }}">📜 História, Missão e Visão</a></li> 
+                <li><a href="{{ url_for('contato_page') }}">📞 Contato / Abrir Chamado</a></li>
                 </ul>
         </nav>
 
             <div id="topics-content">
                 <h3 class="merriweather">Artigos Populares</h3>
                 
-                <a href="{{ url_for('static', filename='../templates/artigo_ferias.html') }}" class="article-link">
+                <a href="{{ url_for('ferias_page') }}" class="article-link">
                     <h4>Política de Férias e Licenças</h4>
                 </a>
                 
-                <a href="{{ url_for('static', filename='../templates/artigo_beneficios.html') }}" class="article-link">
+                <a href="{{ url_for('beneficios_page') }}" class="article-link">
                     <h4>Benefícios Corporativos</h4>
                 </a>
 

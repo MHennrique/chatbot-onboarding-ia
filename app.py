@@ -98,3 +98,23 @@ if __name__ == '__main__':
 def index():
     """Rota raiz para servir o frontend (index.html)."""
     return render_template('index.html')
+
+@app.route('/mvv')
+def mvv_page():
+    """Rota para a página Missão, Visão e Valores."""
+    return render_template('mvv_historia.html')
+
+@app.route('/ferias')
+def ferias_page():
+    """Rota para a página de Solicitação de Férias."""
+    return render_template('artigo_ferias.html')
+
+@app.route('/beneficios')
+def beneficios_page():
+    """Rota para a página de Benefícios Corporativos."""
+    return render_template('artigo_beneficios.html')
+
+@app.route('/contato')
+def contato_page():
+    """Rota para a página de Contato e Suporte."""
+    return render_template('contato.html')
