@@ -4,10 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Contato e Suporte | Rocha Alimentos</title>
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700&family=Merriweather:wght@700&display=swap" rel="stylesheet">
     <style>
-        /* Estilos base do artigo para a área de conteúdo */
+        /* Estilos base do artigo para a área de conteúdo (MANTIDOS E AJUSTADOS) */
         #content-right {
             background-color: var(--color-rocha-light);
             color: var(--color-rocha-green);
@@ -48,7 +48,7 @@
             margin-bottom: 20px;
         }
 
-        /* Estilos do Formulário */
+        /* Estilos do Formulário (MANTIDOS) */
         .contact-form label {
             display: block;
             margin-top: 15px;
@@ -88,7 +88,7 @@
             background-color: var(--color-rocha-accent);
         }
 
-        /* Estilos Zortea Solutions (Diferenciação Visual) */
+        /* Estilos Zortea Solutions (MANTIDOS) */
         .zortea-support {
             border: 2px solid #0077b6; /* Cor principal da Zortea */
             background-color: #f0f8ff; /* Fundo levemente azulado */
@@ -115,25 +115,25 @@
         
         <aside id="sidebar-left">
             <div class="logo-area">
-                <img src="./assets/image.png" alt="Logo Rocha Alimentos">
+                <img src="{{ url_for('static', filename='assets/image.png') }}" alt="Logo Rocha Alimentos">
             </div>
 
             <nav class="main-menu">
                 <ul>
-                    <li><a href="index.html">🏠 Início</a></li>
-                    <li><a href="mvv_historia.html">📜 História, Missão e Visão</a></li> 
-                    <li><a href="contato.html" class="active">📞 Contato / Abrir Chamado</a></li>
+                    <li><a href="{{ url_for('index') }}">🏠 Início</a></li>
+                    <li><a href="{{ url_for('static', filename='../templates/mvv_historia.html') }}">📜 História, Missão e Visão</a></li> 
+                    <li><a href="{{ url_for('static', filename='../templates/contato.html') }}" class="active">📞 Contato / Abrir Chamado</a></li>
                 </ul>
             </nav>
 
             <div id="topics-content">
                 <h3 class="merriweather">Artigos Populares</h3>
                 
-                <a href="artigo_ferias.html" class="article-link">
+                <a href="{{ url_for('static', filename='../templates/artigo_ferias.html') }}" class="article-link">
                     <h4>Política de Férias e Licenças</h4>
                 </a>
                 
-                <a href="artigo_beneficios.html" class="article-link">
+                <a href="{{ url_for('static', filename='../templates/artigo_beneficios.html') }}" class="article-link">
                     <h4>Benefícios Corporativos</h4>
                 </a>
 
@@ -171,7 +171,7 @@
                     <h2>Suporte Técnico (Zortea Solutions)</h2>
                     <p>Se você encontrou um **bug, erro de resposta do Chatbot** ou problema com a interface do sistema de Onboarding, preencha o formulário abaixo para abrir um chamado com a equipe técnica.</p>
                     
-                    <img src="./assets/zortea.jpg" alt="Logo Zortea Solutions" class="zortea-logo">
+                    <img src="{{ url_for('static', filename='assets/zortea_logo.png') }}" alt="Logo Zortea Solutions" class="zortea-logo">
 
                     <form class="contact-form">
                         <label for="nome_zortea">Seu Nome</label>

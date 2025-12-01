@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Benefícios Corporativos | Rocha Alimentos</title>
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700&family=Merriweather:wght@700&display=swap" rel="stylesheet">
     <style>
         /* Estilos de Artigo Unificado (usados em mvv_historia.html) */
@@ -65,25 +65,25 @@
         
         <aside id="sidebar-left">
             <div class="logo-area">
-                <img src="./assets/image.png" alt="Logo Rocha Alimentos">
+                <img src="{{ url_for('static', filename='assets/image.png') }}" alt="Logo Rocha Alimentos">
             </div>
 
             <nav class="main-menu">
                 <ul>
-                    <li><a href="index.html">🏠 Início</a></li>
-                    <li><a href="mvv_historia.html">📜 História, Missão e Visão</a></li> 
-                    <li><a href="contato.html">📞 Contato / Abrir Chamado</a></li>
+                    <li><a href="{{ url_for('index') }}">🏠 Início</a></li>
+                    <li><a href="{{ url_for('static', filename='../templates/mvv_historia.html') }}">📜 História, Missão e Visão</a></li> 
+                    <li><a href="{{ url_for('static', filename='../templates/contato.html') }}">📞 Contato / Abrir Chamado</a></li>
                 </ul>
             </nav>
 
             <div id="topics-content">
                 <h3 class="merriweather">Artigos Populares</h3>
                 
-                <a href="artigo_ferias.html" class="article-link">
+                <a href="{{ url_for('static', filename='../templates/artigo_ferias.html') }}" class="article-link">
                     <h4>Política de Férias e Licenças</h4>
                 </a>
                 
-                <a href="artigo_beneficios.html" class="article-link">
+                <a href="{{ url_for('static', filename='../templates/artigo_beneficios.html') }}" class="article-link active">
                     <h4>Benefícios Corporativos</h4>
                 </a>
 
@@ -101,30 +101,35 @@
                 <p>Aqui você encontra todos os detalhes sobre o pacote de benefícios oferecido pela Rocha Alimentos, pensado para garantir seu bem-estar e qualidade de vida.</p>
                 
                 <div class="benefit-card">
-    <h2>🛒 Vale-Refeição</h2>
-    <p>Todos os colaboradores recebem o benefício em um único cartão flexível, administrado pela **Empresa Fictícia Card**. O valor é creditado no primeiro dia útil de cada mês.</p>
-    <ul class="benefit-details">
-        <li><strong>Valor Mensal:</strong> R$ 750,00.</li> <li><strong>Contato:</strong> rh@empresa.com</li> <li><strong>Cobertura:</strong> Aceito em supermercados, mercearias e restaurantes (conforme bandeira).</li>
-        <li><strong>Regra:</strong> Não há desconto em folha, é um benefício 100% custeado pela Rocha Alimentos.</li>
-    </ul>
-</div>
+                    <h2>🛒 Vale-Refeição</h2>
+                    <p>Todos os colaboradores recebem o benefício em um único cartão flexível, administrado pela **Empresa Fictícia Card**. O valor é creditado no primeiro dia útil de cada mês.</p>
+                    <ul class="benefit-details">
+                        <li><strong>Valor Mensal:</strong> R$ 750,00.</li> <li><strong>Contato:</strong> rh@empresa.com</li> <li><strong>Cobertura:</strong> Aceito em supermercados, mercearias e restaurantes (conforme bandeira).</li>
+                        <li><strong>Regra:</strong> Não há desconto em folha, é um benefício 100% custeado pela Rocha Alimentos.</li>
+                    </ul>
+                </div>
 
-<div class="benefit-card">
-    <h2>🏥 Plano de Saúde</h2>
-    <p>A Rocha Alimentos oferece um plano completo para você e seus dependentes, através da **Saúde Total Integrada (STI)**.</p>
-    <ul class="benefit-details">
-        <li><strong>Valor de Custeio Mensal (Empregado):</strong> R$ 250,00.</li> <li><strong>Plano:</strong> Básico Plus (Cobertura Nacional).</li>
-        <li><strong>Contato:</strong> rh@empresa.com</li> <li><strong>Co-participação:</strong> Aplica-se uma pequena co-participação em consultas e exames (10%).</li>
-    </ul>
-</div>
+                <div class="benefit-card">
+                    <h2>🏥 Plano de Saúde</h2>
+                    <p>A Rocha Alimentos oferece um plano completo para você e seus dependentes, através da **Saúde Total Integrada (STI)**.</p>
+                    <ul class="benefit-details">
+                        <li><strong>Valor de Custeio Mensal (Empregado):</strong> R$ 250,00.</li> <li><strong>Plano:</strong> Básico Plus (Cobertura Nacional).</li>
+                        <li><strong>Contato:</strong> rh@empresa.com</li> <li><strong>Co-participação:</strong> Aplica-se uma pequena co-participação em consultas e exames (10%).</li>
+                    </ul>
+                </div>
 
-<div class="benefit-card">
-    <h2>🦷 Plano Dental</h2>
-    <p>Complementando o pacote de saúde, oferecemos cobertura odontológica completa para você. Administrado pela **Dental Max**.</p>
-    <ul class="benefit-details">
-        <li><strong>Valor de Custeio Mensal (Empregado):</strong> R$ 80,00.</li> <li><strong>Contato:</strong> beneficios@empresa.com</li> <li><strong>Cobertura:</strong> Tratamentos preventivos, restaurações e canal.</li>
-    </ul>
-</div>
+                <div class="benefit-card">
+                    <h2>🦷 Plano Dental</h2>
+                    <p>Complementando o pacote de saúde, oferecemos cobertura odontológica completa para você. Administrado pela **Dental Max**.</p>
+                    <ul class="benefit-details">
+                        <li><strong>Valor de Custeio Mensal (Empregado):</strong> R$ 80,00.</li> <li><strong>Contato:</strong> beneficios@empresa.com</li> <li><strong>Cobertura:</strong> Tratamentos preventivos, restaurações e canal.</li>
+                    </ul>
+                </div>
 
+            </div>
+            
+        </main>
+        
+    </div>
 </body>
 </html>

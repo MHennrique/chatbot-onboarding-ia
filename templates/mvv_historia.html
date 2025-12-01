@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>História, Missão e Valores | Rocha Alimentos</title>
-    <link rel="stylesheet" href="style.css"> 
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}"> 
     <link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700&family=Merriweather:wght@700&display=swap" rel="stylesheet">
     <style>
         /* Estilos específicos que eram usados antes no arquivo de artigo, 
@@ -60,25 +60,25 @@
         
         <aside id="sidebar-left">
             <div class="logo-area">
-                <img src="./assets/image.png" alt="Logo Rocha Alimentos">
+                <img src="{{ url_for('static', filename='assets/image.png') }}" alt="Logo Rocha Alimentos">
             </div>
 
             <nav class="main-menu">
                 <ul>
-                    <li><a href="index.html">🏠 Início</a></li>
-                    <li><a href="mvv_historia.html" class="active">📜 História, Missão e Visão</a></li> 
-                    <li><a href="contato.html">📞 Contato / Abrir Chamado</a></li>
+                    <li><a href="{{ url_for('index') }}">🏠 Início</a></li>
+                    <li><a href="{{ url_for('static', filename='../templates/mvv_historia.html') }}" class="active">📜 História, Missão e Visão</a></li> 
+                    <li><a href="{{ url_for('static', filename='../templates/contato.html') }}">📞 Contato / Abrir Chamado</a></li>
                 </ul>
             </nav>
 
             <div id="topics-content">
                 <h3 class="merriweather">Artigos Populares</h3>
                 
-                <a href="artigo_ferias.html" class="article-link">
+                <a href="{{ url_for('static', filename='../templates/artigo_ferias.html') }}" class="article-link">
                     <h4>Política de Férias e Licenças</h4>
                 </a>
                 
-                <a href="artigo_beneficios.html" class="article-link">
+                <a href="{{ url_for('static', filename='../templates/artigo_beneficios.html') }}" class="article-link">
                     <h4>Benefícios Corporativos</h4>
                 </a>
 
@@ -150,5 +150,5 @@
         </main>
         
     </div>
-    </body>
+</body>
 </html>
