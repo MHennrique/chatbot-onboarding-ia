@@ -18,7 +18,7 @@ genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
 
 # Inicializa o Flask, que será nosso servidor web
 app = Flask(__name__)
-CORS(app, resources={r"/ask": {"origins": "http://127.0.0.1:5500"}})
+CORS(app)#(app, resources={r"/ask": {"origins": "http://127.0.0.1:5500"}})
 
 # Confirma que a base de conhecimento foi carregada (apenas para debug)
 print(f"Conteúdo da empresa importado (Tamanho: {len(CONTEUDO_EMPRESA)} caracteres)")
