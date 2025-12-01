@@ -1,83 +1,90 @@
 document.addEventListener('DOMContentLoaded', () => {
-   /* const navLinks = document.querySelectorAll('nav a');
-    const sections = document.querySelectorAll('.page-section');
-    function showSection(targetId) {
-        sections.forEach(section => {
-            section.style.display = (section.id === targetId) ? 'block' : 'none';
-        });
-    }
-    navLinks.forEach(link => {
-        link.addEventListener('click', (event) => {
-            event.preventDefault();
-            const targetId = link.getAttribute('href').substring(1);
-            showSection(targetId);
-        });
-    });
-    showSection('inicio');*/
+    /* const navLinks = document.querySelectorAll('nav a');
+    const sections = document.querySelectorAll('.page-section');
+    function showSection(targetId) {
+        sections.forEach(section => {
+            section.style.display = (section.id === targetId) ? 'block' : 'none';
+        });
+    }
+    navLinks.forEach(link => {
+        link.addEventListener('click', (event) => {
+            event.preventDefault();
+            const targetId = link.getAttribute('href').substring(1);
+            showSection(targetId);
+        });
+    });
+    showSection('inicio');*/
 
-    // --- CÓDIGO DO CHATBOT ---
-    const chatMessages = document.getElementById('chat-messages');
-    const userInput = document.getElementById('user-input');
-    const sendBtn = document.getElementById('send-button');
-    const typingIndicator = document.getElementById('typing-indicator');
+    // --- CÓDIGO DO CHATBOT ---
+    const chatMessages = document.getElementById('chat-messages');
+    const userInput = document.getElementById('user-input');
+    const sendBtn = document.getElementById('send-button');
+    const typingIndicator = document.getElementById('typing-indicator');
 
-    // MUDANÇA 1: Array para guardar o histórico da conversa
-    let conversationHistory = [];
+    // MUDANÇA 1: Array para guardar o histórico da conversa
+    let conversationHistory = [];
 
-    function addMessage(message, sender) {
-        if (sender === 'user') {
-            conversationHistory.push({ role: 'user', parts: [message] });
-        } else if (sender === 'bot') {
-            conversationHistory.push({ role: 'model', parts: [message] });
-        }
-        
-        const messageElement = document.createElement('div');
-        messageElement.classList.add('message', sender === 'user' ? 'user-message' : 'bot-message');
-        const pElement = document.createElement('p');
-        if (sender === 'bot' && window.marked) {
-            pElement.innerHTML = marked.parse(message);
-        } else {
-            pElement.textContent = message;
-        }
-        messageElement.appendChild(pElement);
-        chatMessages.appendChild(messageElement);
-        chatMessages.scrollTop = chatMessages.scrollHeight;
-    }
+    function addMessage(message, sender) {
+        if (sender === 'user') {
+            conversationHistory.push({ role: 'user', parts: [message] });
+        } else if (sender === 'bot') {
+            conversationHistory.push({ role: 'model', parts: [message] });
+        }
+        
+        const messageElement = document.createElement('div');
+        messageElement.classList.add('message', sender === 'user' ? 'user-message' : 'bot-message');
+        const pElement = document.createElement('p');
+        if (sender === 'bot' && window.marked) {
+            pElement.innerHTML = marked.parse(message);
+        } else {
+            pElement.textContent = message;
+        }
+        messageElement.appendChild(pElement);
+        chatMessages.appendChild(messageElement);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
 
-    async function sendMessageToBot() {
-        const question = userInput.value.trim();
-        if (question === '') return;
+    async function sendMessageToBot() {
+        const question = userInput.value.trim();
+        if (question === '') return;
 
-        addMessage(question, 'user');
-        userInput.value = '';
-        typingIndicator.style.display = 'block';
-        chatMessages.scrollTop = chatMessages.scrollHeight;
+        addMessage(question, 'user');
+        userInput.value = '';
+        typingIndicator.style.display = 'block';
+        chatMessages.scrollTop = chatMessages.scrollHeight;
 
-        try {
-            const response = await fetch('/ask', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ 
-                    question: question,
-                    history: conversationHistory.slice(0, -1) 
-                })
-            });
+        try {
+            // URL CORRIGIDA: Usa caminho relativo '/ask'
+            const response = await fetch('/ask', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    question: question,
+                    history: conversationHistory.slice(0, -1) 
+                })
+            });
 
-            if (!response.ok) { throw new Error('A resposta da rede não foi OK.'); }
+            if (!response.ok) { 
+                // Se a resposta HTTP não for 200 OK, levanta um erro
+                const errorText = await response.text();
+                throw new Error(`Erro do servidor (${response.status}): ${errorText.substring(0, 100)}...`);
+            }
 
-            const data = await response.json();
-            addMessage(data.answer, 'bot');
-        } catch (error) {
-            console.error('Erro ao buscar resposta:', error);
-            addMessage('Desculpe, não consegui me conectar ao meu cérebro.', 'bot');
-            conversationHistory.pop();
-        } finally {
-            typingIndicator.style.display = 'none';
-        }
-    }
+            // A resposta é JSON válida
+            const data = await response.json();
+            addMessage(data.answer, 'bot');
+        } catch (error) {
+            console.error('Erro ao buscar resposta:', error);
+            // Mostra uma mensagem de erro mais detalhada, se possível
+            addMessage(`Desculpe, não consegui me conectar ao meu cérebro. Detalhe: ${error.message}`, 'bot');
+            conversationHistory.pop();
+        } finally {
+            typingIndicator.style.display = 'none';
+        }
+    }
 
-    sendBtn.addEventListener('click', sendMessageToBot);
-    userInput.addEventListener('keypress', (event) => {
-        if (event.key === 'Enter') { sendMessageToBot(); }
-    });
+    sendBtn.addEventListener('click', sendMessageToBot);
+    userInput.addEventListener('keypress', (event) => {
+        if (event.key === 'Enter') { sendMessageToBot(); }
+    });
 });
