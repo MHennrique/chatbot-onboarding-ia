@@ -5,6 +5,7 @@ from dotenv import load_dotenv
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 import google.generativeai as genai
+from flask import Flask, request, jsonify, render_template
 
 # Importa a base de conhecimento pronta do nosso novo módulo
 from knowledge_base import CONTEUDO_EMPRESA
@@ -92,3 +93,8 @@ def ask_chatbot():
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
+
+@app.route('/')
+def index():
+    """Rota raiz para servir o frontend (index.html)."""
+    return render_template('index.html')
