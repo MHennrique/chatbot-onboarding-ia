@@ -4,59 +4,131 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Fluxo de Orçamento, Pedido e Separação - Rocha Alimentos</title>
+    <link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700&family=Merriweather:wght@700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    
+    <style>
+        #content-right {
+            /* Os estilos principais de layout já estão em style.css */
+            padding: 40px; 
+            overflow-y: auto;
+        }
+
+        .article-content {
+            padding: 0;
+            margin: 0;
+            min-height: 100%;
+            box-sizing: border-box;
+        }
+
+        .article-content h1 {
+            color: var(--color-rocha-green);
+            border-bottom: 2px solid var(--color-rocha-accent);
+            padding-bottom: 10px;
+            margin-bottom: 25px;
+            font-size: 2.5rem;
+        }
+        
+        .step-card {
+            background: #fff;
+            padding: 20px;
+            border-left: 5px solid var(--color-rocha-accent); 
+            margin-bottom: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            color: #343a40; 
+        }
+
+        .step-card h2 {
+            margin-top: 0;
+            color: var(--color-rocha-accent);
+            font-size: 1.5rem;
+            font-family: 'Merriweather', serif;
+        }
+    </style>
 </head>
 <body>
     
-    <header class="main-header">
-        <div class="container">
-            <a href="{{ url_for('index') }}" class="logo">Central de Ajuda</a>
-            <nav>
+    <div id="app-container">
+        
+        <aside id="sidebar-left">
+            <div class="logo-area">
+                <img src="{{ url_for('static', filename='assets/image.png') }}" alt="Logo Rocha Alimentos">
+            </div>
+
+            <nav class="main-menu">
                 <ul>
-                    <li><a href="{{ url_for('index') }}">Início</a></li>
-                    <li><a href="{{ url_for('mvv_page') }}">Quem Somos</a></li>
-                    <li><a href="{{ url_for('contato_page') }}">Abrir Chamado</a></li>
+                    <li><a href="{{ url_for('index') }}">🏠 Início</a></li>
+                    <li><a href="{{ url_for('mvv_page') }}">📜 História, Missão e Visão</a></li> 
+                    <li><a href="{{ url_for('contato_page') }}">📞 Contato / Abrir Chamado</a></li>
                 </ul>
             </nav>
-        </div>
-    </header>
 
-    <main class="container article-page">
-        <article>
-            <h1>Fluxo Detalhado de Orçamento, Pedido e Separação</h1>
-            <p class="article-meta">Responsáveis: Comercial, Financeiro. | Atualizado em: 2025</p>
+            <div id="topics-content">
+                <h3 class="merriweather">Artigos Populares</h3>
+                
+                <a href="{{ url_for('ferias_page') }}" class="article-link">
+                    <h4>Política de Férias e Licenças</h4>
+                </a>
+                
+                <a href="{{ url_for('beneficios_page') }}" class="article-link">
+                    <h4>Benefícios Corporativos</h4>
+                </a>
+
+                <a href="{{ url_for('cadastro_cliente_page') }}" class="article-link">
+                    <h4>Processo de Cadastro de Cliente</h4>
+                </a>
+                
+                <a href="{{ url_for('orcamento_pedido_page') }}" class="article-link active">
+                    <h4>Orçamento, Pedido e Separação</h4>
+                </a>
+
+                <a href="#" class="article-link">
+                    <h4>Ferramentas de Trabalho</h4>
+                </a>
+            </div>
+        </aside>
+
+        <main id="content-right">
             
-            <section class="article-section">
-                <h2>1. Solicitação de Orçamento</h2>
-                <p>O cliente encaminha a solicitação por e-mail. O **Comercial** consulta estoque, preço, tipo de frete e prazo de entrega com base nas informações do pedido.</p>
-            </section>
+            <div class="article-content">
+                <h1 class="merriweather">Fluxo Detalhado de Orçamento, Pedido e Separação</h1>
+                <p class="article-meta">Responsáveis: Comercial, Financeiro. | Atualizado em: 2025</p>
+                
+                <section class="step-card">
+                    <h2>1. Solicitação de Orçamento</h2>
+                    <p>O cliente encaminha a solicitação por e-mail. O **Comercial** consulta estoque, preço, tipo de frete e prazo de entrega com base nas informações do pedido.</p>
+                </section>
+                
+                <section class="step-card">
+                    <h2>2. Geração do Orçamento</h2>
+                    <p>Após todas as validações internas, o **Comercial** gera o orçamento no sistema e envia ao cliente por e-mail.</p>
+                </section>
+                
+                <section class="step-card">
+                    <h2>3. Retorno do Orçamento</h2>
+                    <p>Com a aprovação do cliente, o **Comercial** segue para a emissão do pedido.</p>
+                </section>
+
+                <section class="step-card">
+                    <h2>4. Emissão do Pedido</h2>
+                    <p>O **Comercial** deve verificar todos os detalhes (quantidade, valores, frete, forma de pagamento e observações da nota fiscal) antes de encaminhar o pedido para a liberação do **Financeiro**.</p>
+                </section>
+
+                <section class="step-card">
+                    <h2>5. Liberação Financeira</h2>
+                    <p>O setor **Financeiro** valida a forma de pagamento e o limite de crédito do cliente, retornando com a liberação ou retenção do pedido.</p>
+                </section>
+
+                <section class="step-card">
+                    <h2>6. Pedido de Separação</h2>
+                    <p>Após a liberação financeira, o **Comercial** acessa o pedido no sistema e clica no botão "Gerar Pedido de Separação", que encaminha o processo para o estoque.</p>
+                </section>
+            </div>
             
-            <section class="article-section">
-                <h2>2. Geração do Orçamento</h2>
-                <p>Após todas as validações internas, o **Comercial** gera o orçamento no sistema e envia ao cliente por e-mail.</p>
-            </section>
-            
-            <section class="article-section">
-                <h2>3. Retorno do Orçamento</h2>
-                <p>Com a aprovação do cliente, o **Comercial** segue para a emissão do pedido.</p>
-            </section>
-
-            <section class="article-section">
-                <h2>4. Emissão do Pedido</h2>
-                <p>O **Comercial** deve verificar todos os detalhes (quantidade, valores, frete, forma de pagamento e observações da nota fiscal) antes de encaminhar o pedido para a liberação do **Financeiro**.</p>
-            </section>
-
-            <section class="article-section">
-                <h2>5. Liberação Financeira</h2>
-                <p>O setor **Financeiro** valida a forma de pagamento e o limite de crédito do cliente, retornando com a liberação ou retenção do pedido.</p>
-            </section>
-
-            <section class="article-section">
-                <h2>6. Pedido de Separação</h2>
-                <p>Após a liberação financeira, o **Comercial** acessa o pedido no sistema e clica no botão "Gerar Pedido de Separação", que encaminha o processo para o estoque.</p>
-            </section>
-        </article>
-    </main>
+        </main>
+        
+    </div>
     
     <script src="{{ url_for('static', filename='script.js') }}"></script>
 </body>
