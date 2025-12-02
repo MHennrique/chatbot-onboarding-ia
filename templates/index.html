@@ -35,6 +35,14 @@
                     <h4>Benefícios Corporativos</h4>
                 </a>
 
+                <a href="{{ url_for('cadastro_cliente_page') }}" class="article-link">
+                    <h4>Processo de Cadastro de Cliente</h4>
+                </a>
+
+                <a href="{{ url_for('orcamento_pedido_page') }}" class="article-link">
+                    <h4>Orçamento, Pedido e Separação</h4>
+                </a>
+
                 <a href="#" class="article-link">
                     <h4>Ferramentas de Trabalho</h4>
                 </a>
@@ -67,6 +75,6 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-    <<script src="{{ url_for('static', filename='script.js') }}"></script>
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
 </body>
 </html>

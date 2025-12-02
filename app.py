@@ -1,4 +1,3 @@
-
 import os
 from dotenv import load_dotenv
 from flask import Flask, request, jsonify
@@ -40,6 +39,14 @@ def obter_resposta_ia(pergunta_usuario, base_conhecimento, historico_conversa):
         
         Para ver o detalhe completo dos benefícios e valores, acesse: [Detalhamento de Benefícios](/beneficios)
 
+    4. Se a pergunta for sobre 'cadastro de cliente', 'como cadastrar um cliente', 'documentos de cliente', 'Serasa' ou 'análise de crédito', inclua OBRIGATORIAMENTE a seguinte linha no final da sua resposta:
+        
+        Para ver o processo detalhado, acesse: [Processo Completo de Cadastro de Cliente](/cadastro-cliente)
+
+    5. Se a pergunta for sobre 'orçamento', 'emissão de pedido', 'liberação financeira de pedido' ou 'pedido de separação', inclua OBRIGATORIAMENTE a seguinte linha no final da sua resposta:
+        
+        Para ver o fluxo completo, acesse: [Fluxo Completo de Orçamento e Pedido](/orcamento-pedido)
+    
     Se a resposta não estiver no CONTEÚDO, diga: 'Desculpe, não encontrei essa informação nos meus documentos.'.
     Não invente informações.
 
@@ -103,6 +110,17 @@ def contato_page():
     """Rota para a página de Contato e Suporte."""
     return render_template('contato.html')
 
-if __name__ == '__main__':
 
+@app.route('/cadastro-cliente')
+def cadastro_cliente_page():
+    """Rota para a página do Processo de Cadastro de Cliente."""
+    return render_template('artigo_cadastro_cliente.html')
+
+@app.route('/orcamento-pedido')
+def orcamento_pedido_page():
+    """Rota para a página do Processo de Orçamento e Pedido."""
+    return render_template('artigo_orcamento_pedido.html')
+
+
+if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)

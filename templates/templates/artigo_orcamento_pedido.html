@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fluxo de Orçamento, Pedido e Separação - Rocha Alimentos</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    
+    <header class="main-header">
+        <div class="container">
+            <a href="{{ url_for('index') }}" class="logo">Central de Ajuda</a>
+            <nav>
+                <ul>
+                    <li><a href="{{ url_for('index') }}">Início</a></li>
+                    <li><a href="{{ url_for('mvv_page') }}">Quem Somos</a></li>
+                    <li><a href="{{ url_for('contato_page') }}">Abrir Chamado</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container article-page">
+        <article>
+            <h1>Fluxo Detalhado de Orçamento, Pedido e Separação</h1>
+            <p class="article-meta">Responsáveis: Comercial, Financeiro. | Atualizado em: 2025</p>
+            
+            <section class="article-section">
+                <h2>1. Solicitação de Orçamento</h2>
+                <p>O cliente encaminha a solicitação por e-mail. O **Comercial** consulta estoque, preço, tipo de frete e prazo de entrega com base nas informações do pedido.</p>
+            </section>
+            
+            <section class="article-section">
+                <h2>2. Geração do Orçamento</h2>
+                <p>Após todas as validações internas, o **Comercial** gera o orçamento no sistema e envia ao cliente por e-mail.</p>
+            </section>
+            
+            <section class="article-section">
+                <h2>3. Retorno do Orçamento</h2>
+                <p>Com a aprovação do cliente, o **Comercial** segue para a emissão do pedido.</p>
+            </section>
+
+            <section class="article-section">
+                <h2>4. Emissão do Pedido</h2>
+                <p>O **Comercial** deve verificar todos os detalhes (quantidade, valores, frete, forma de pagamento e observações da nota fiscal) antes de encaminhar o pedido para a liberação do **Financeiro**.</p>
+            </section>
+
+            <section class="article-section">
+                <h2>5. Liberação Financeira</h2>
+                <p>O setor **Financeiro** valida a forma de pagamento e o limite de crédito do cliente, retornando com a liberação ou retenção do pedido.</p>
+            </section>
+
+            <section class="article-section">
+                <h2>6. Pedido de Separação</h2>
+                <p>Após a liberação financeira, o **Comercial** acessa o pedido no sistema e clica no botão "Gerar Pedido de Separação", que encaminha o processo para o estoque.</p>
+            </section>
+        </article>
+    </main>
+    
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>

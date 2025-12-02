@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Processo de Cadastro de Cliente - Rocha Alimentos</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    
+    <header class="main-header">
+        <div class="container">
+            <a href="{{ url_for('index') }}" class="logo">Central de Ajuda</a>
+            <nav>
+                <ul>
+                    <li><a href="{{ url_for('index') }}">Início</a></li>
+                    <li><a href="{{ url_for('mvv_page') }}">Quem Somos</a></li>
+                    <li><a href="{{ url_for('contato_page') }}">Abrir Chamado</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container article-page">
+        <article>
+            <h1>Processo Detalhado de Cadastro de Cliente</h1>
+            <p class="article-meta">Responsáveis: Comercial, Financeiro. | Atualizado em: 2025</p>
+            
+            <section class="article-section">
+                <h2>1. Solicitação de Documentos</h2>
+                <p>O setor **Comercial** é responsável por solicitar ao novo cliente a documentação básica:</p>
+                <ul>
+                    <li>Cartão CNPJ</li>
+                    <li>Contrato Social</li>
+                    <li>Consulta do Sintegra</li>
+                </ul>
+            </section>
+            
+            <section class="article-section">
+                <h2>2. Análise de Crédito</h2>
+                <p>O Comercial encaminha todos os documentos coletados ao setor **Financeiro** para realizar a consulta no Serasa.</p>
+            </section>
+            
+            <section class="article-section">
+                <h2>3. Aprovação da Análise de Crédito</h2>
+                <p>Após a análise, o **Financeiro** e o **Comercial** liberam o limite financeiro do cliente.</p>
+            </section>
+
+            <section class="article-section">
+                <h2>4. Arquivamento</h2>
+                <p>O setor **Comercial** deve arquivar todos os documentos do cliente na pasta correspondente dentro do Google Drive da empresa.</p>
+            </section>
+
+            <section class="article-section">
+                <h2>5. Cadastro no Sistema (Tela "Parceiro")</h2>
+                <p>Este passo é executado pelo setor **Comercial** e envolve:</p>
+                <ol>
+                    <li>Acessar a tela "Parceiro" no sistema.</li>
+                    <li>Clicar no ícone "+" e inserir o CNPJ.</li>
+                    <li>Importar automaticamente os dados da Receita Federal.</li>
+                    <li>Inserir a inscrição estadual (se houver) e importar dados da SEFAZ.</li>
+                    <li>Definir o perfil do cliente.</li>
+                    <li>Na aba Fiscal, selecionar o tipo de cliente (Revenda, Consumidor Final, ou Consumidor Final Contribuinte).</li>
+                    <li>Na aba Grupo ICMS, selecionar o grupo correspondente.</li>
+                    <li>Salvar o cadastro.</li>
+                </ol>
+            </section>
+        </article>
+    </main>
+    
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>
