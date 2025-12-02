@@ -5,7 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Processo de Cadastro de Cliente - Rocha Alimentos</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700&family=Merriweather:wght@700&display=swap" rel="stylesheet">
     <style>
+        /* Estilos de Artigo Unificado - MANTIDOS */
         #content-right {
             background-color: var(--color-rocha-light);
             color: var(--color-rocha-green);
@@ -33,11 +35,11 @@
         .step-card {
             background: #fff;
             padding: 20px;
-            border-left: 5px solid var(--color-rocha-accent); /* Linha lateral verde para destaque */
+            border-left: 5px solid var(--color-rocha-accent); 
             margin-bottom: 20px;
             border-radius: 8px;
             box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-            color: #343a40; /* Texto do card mais escuro para contraste */
+            color: #343a40; 
         }
 
         .step-card h2 {
@@ -48,72 +50,101 @@
         }
         
         .back-link {
-            display: none; /* Não é necessário com a barra lateral */
+            display: none; 
         }
     </style>
 </head>
 <body>
-    
-    <header class="main-header">
-        <div class="container">
-            <a href="{{ url_for('index') }}" class="logo">Central de Ajuda</a>
-            <nav>
+
+    <div id="app-container">
+        
+        <aside id="sidebar-left">
+            <div class="logo-area">
+                <img src="{{ url_for('static', filename='assets/image.png') }}" alt="Logo Rocha Alimentos">
+            </div>
+
+            <nav class="main-menu">
                 <ul>
-                    <li><a href="{{ url_for('index') }}">Início</a></li>
-                    <li><a href="{{ url_for('mvv_page') }}">Quem Somos</a></li>
-                    <li><a href="{{ url_for('contato_page') }}">Abrir Chamado</a></li>
+                    <li><a href="{{ url_for('index') }}">🏠 Início</a></li>
+                    <li><a href="{{ url_for('mvv_page') }}">📜 História, Missão e Visão</a></li> 
+                    <li><a href="{{ url_for('contato_page') }}">📞 Contato / Abrir Chamado</a></li>
                 </ul>
             </nav>
-        </div>
-    </header>
 
-    <main class="container article-page">
-        <article>
-            <h1>Processo Detalhado de Cadastro de Cliente</h1>
-            <p class="article-meta">Responsáveis: Comercial, Financeiro. | Atualizado em: 2025</p>
-            
-            <section class="article-section">
-                <h2>1. Solicitação de Documentos</h2>
-                <p>O setor **Comercial** é responsável por solicitar ao novo cliente a documentação básica:</p>
-                <ul>
-                    <li>Cartão CNPJ</li>
-                    <li>Contrato Social</li>
-                    <li>Consulta do Sintegra</li>
-                </ul>
-            </section>
-            
-            <section class="article-section">
-                <h2>2. Análise de Crédito</h2>
-                <p>O Comercial encaminha todos os documentos coletados ao setor **Financeiro** para realizar a consulta no Serasa.</p>
-            </section>
-            
-            <section class="article-section">
-                <h2>3. Aprovação da Análise de Crédito</h2>
-                <p>Após a análise, o **Financeiro** e o **Comercial** liberam o limite financeiro do cliente.</p>
-            </section>
+            <div id="topics-content">
+                <h3 class="merriweather">Artigos Populares</h3>
+                
+                <a href="{{ url_for('ferias_page') }}" class="article-link">
+                    <h4>Política de Férias e Licenças</h4>
+                </a>
+                
+                <a href="{{ url_for('beneficios_page') }}" class="article-link">
+                    <h4>Benefícios Corporativos</h4>
+                </a>
 
-            <section class="article-section">
-                <h2>4. Arquivamento</h2>
-                <p>O setor **Comercial** deve arquivar todos os documentos do cliente na pasta correspondente dentro do Google Drive da empresa.</p>
-            </section>
+                <a href="{{ url_for('cadastro_cliente_page') }}" class="article-link active">
+                    <h4>Processo de Cadastro de Cliente</h4>
+                </a>
+                
+                <a href="{{ url_for('orcamento_pedido_page') }}" class="article-link">
+                    <h4>Orçamento, Pedido e Separação</h4>
+                </a>
 
-            <section class="article-section">
-                <h2>5. Cadastro no Sistema (Tela "Parceiro")</h2>
-                <p>Este passo é executado pelo setor **Comercial** e envolve:</p>
-                <ol>
-                    <li>Acessar a tela "Parceiro" no sistema.</li>
-                    <li>Clicar no ícone "+" e inserir o CNPJ.</li>
-                    <li>Importar automaticamente os dados da Receita Federal.</li>
-                    <li>Inserir a inscrição estadual (se houver) e importar dados da SEFAZ.</li>
-                    <li>Definir o perfil do cliente.</li>
-                    <li>Na aba Fiscal, selecionar o tipo de cliente (Revenda, Consumidor Final, ou Consumidor Final Contribuinte).</li>
-                    <li>Na aba Grupo ICMS, selecionar o grupo correspondente.</li>
-                    <li>Salvar o cadastro.</li>
-                </ol>
-            </section>
-        </article>
-    </main>
-    
-    <script src="{{ url_for('static', filename='script.js') }}"></script>
+                <a href="#" class="article-link">
+                    <h4>Ferramentas de Trabalho</h4>
+                </a>
+            </div>
+        </aside>
+
+        <main id="content-right">
+            
+            <div class="article-content">
+                <h1 class="merriweather">Processo Detalhado de Cadastro de Cliente</h1>
+                <p class="article-meta">Responsáveis: Comercial, Financeiro. | Atualizado em: 2025</p>
+                
+                <section class="step-card">
+                    <h2>1. Solicitação de Documentos</h2>
+                    <p>O setor **Comercial** é responsável por solicitar ao novo cliente a documentação básica:</p>
+                    <ul>
+                        <li>Cartão CNPJ</li>
+                        <li>Contrato Social</li>
+                        <li>Consulta do Sintegra</li>
+                    </ul>
+                </section>
+                
+                <section class="step-card">
+                    <h2>2. Análise de Crédito</h2>
+                    <p>O Comercial encaminha todos os documentos coletados ao setor **Financeiro** para realizar a consulta no Serasa.</p>
+                </section>
+                
+                <section class="step-card">
+                    <h2>3. Aprovação da Análise de Crédito</h2>
+                    <p>Após a análise, o **Financeiro** e o **Comercial** liberam o limite financeiro do cliente.</p>
+                </section>
+
+                <section class="step-card">
+                    <h2>4. Arquivamento</h2>
+                    <p>O setor **Comercial** deve arquivar todos os documentos do cliente na pasta correspondente dentro do Google Drive da empresa.</p>
+                </section>
+
+                <section class="step-card">
+                    <h2>5. Cadastro no Sistema (Tela "Parceiro")</h2>
+                    <p>Este passo é executado pelo setor **Comercial** e envolve:</p>
+                    <ol>
+                        <li>Acessar a tela "Parceiro" no sistema.</li>
+                        <li>Clicar no ícone "+" e inserir o CNPJ.</li>
+                        <li>Importar automaticamente os dados da Receita Federal.</li>
+                        <li>Inserir a inscrição estadual (se houver) e importar dados da SEFAZ.</li>
+                        <li>Definir o perfil do cliente.</li>
+                        <li>Na aba Fiscal, selecionar o tipo de cliente (Revenda, Consumidor Final, ou Consumidor Final Contribuinte).</li>
+                        <li>Na aba Grupo ICMS, selecionar o grupo correspondente.</li>
+                        <li>Salvar o cadastro.</li>
+                    </ol>
+                </section>
+            </div>
+            
+        </main>
+        
+    </div>
 </body>
 </html>
