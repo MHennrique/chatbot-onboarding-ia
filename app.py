@@ -8,11 +8,9 @@ from knowledge_base import CONTEUDO_EMPRESA
 
 load_dotenv()
 
-# Configurar a API Key do Google (usará a variável de ambiente no Railway)
 genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
 
 app = Flask(__name__)
-# CORS simplificado para funcionar no ambiente de produção
 CORS(app) 
 
 print(f"Conteúdo da empresa importado (Tamanho: {len(CONTEUDO_EMPRESA)} caracteres)")
@@ -20,7 +18,6 @@ print(f"Conteúdo da empresa importado (Tamanho: {len(CONTEUDO_EMPRESA)} caracte
 def obter_resposta_ia(pergunta_usuario, base_conhecimento, historico_conversa):
     """Inicia um chat com o Gemini, usando o histórico para manter o contexto."""
     
-    # O Gemini deve se apresentar como Guia Rocha
     model = genai.GenerativeModel('gemini-2.5-flash')
 
     instrucao_sistema = f"""
@@ -92,7 +89,6 @@ def obter_resposta_ia(pergunta_usuario, base_conhecimento, historico_conversa):
         return "Ocorreu um erro ao me conectar com a inteligência artificial."
 
 
-# --- ROTAS DA API E NAVEGAÇÃO (TODAS AS ROTAS AQUI!) ---
 
 @app.route('/ask', methods=['POST'])
 def ask_chatbot():
@@ -145,7 +141,6 @@ def orcamento_pedido_page():
     """Rota para a página do Processo de Orçamento e Pedido."""
     return render_template('artigo_orcamento_pedido.html')
 
-# NOVAS ROTAS TÉCNICAS (CONSOLIDADAS)
 @app.route('/baixa-consumo')
 def baixa_consumo_page():
     """Rota para a página do processo de Baixa de Uso e Consumo."""
