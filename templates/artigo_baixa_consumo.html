@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Baixa de Uso e Consumo - Rocha Alimentos</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    </head>
+<body>
+    
+    <div id="app-container">
+        <aside id="sidebar-left">
+            <div class="logo-area">
+                <img src="{{ url_for('static', filename='assets/image.png') }}" alt="Logo Rocha Alimentos">
+            </div>
+            <nav class="main-menu">
+                <ul>
+                    <li><a href="{{ url_for('index') }}">🏠 Início</a></li>
+                    <li><a href="{{ url_for('mvv_page') }}">📜 História, Missão e Visão</a></li> 
+                    <li><a href="{{ url_for('contato_page') }}">📞 Contato / Abrir Chamado</a></li>
+                </ul>
+            </nav>
+            <div id="topics-content">
+                <h3 class="merriweather">Artigos Populares</h3>
+                <a href="{{ url_for('ferias_page') }}" class="article-link"><h4>Política de Férias e Licenças</h4></a>
+                <a href="{{ url_for('beneficios_page') }}" class="article-link"><h4>Benefícios Corporativos</h4></a>
+                <a href="{{ url_for('cadastro_cliente_page') }}" class="article-link"><h4>Processo de Cadastro de Cliente</h4></a>
+                <a href="{{ url_for('orcamento_pedido_page') }}" class="article-link"><h4>Orçamento, Pedido e Separação</h4></a>
+                <a href="{{ url_for('cadastro_produto_page') }}" class="article-link"><h4>Cadastro de Produto (Logística)</h4></a>
+                <a href="{{ url_for('emissao_nf_page') }}" class="article-link"><h4>Emissão da Nota Fiscal (Fiscal)</h4></a>
+                <a href="{{ url_for('baixa_consumo_page') }}" class="article-link active"><h4>Baixa de Uso e Consumo (Estoque)</h4></a>
+                <a href="#" class="article-link"><h4>Ferramentas de Trabalho</h4></a>
+            </div>
+        </aside>
+
+        <main id="content-right">
+            <div class="article-content">
+                <h1>Procedimento de Baixa de Uso e Consumo</h1>
+                <p class="article-meta">Responsável: Estoque. | Última Revisão: 2025</p>
+                
+                <section class="step-card">
+                    <h2>1. Identificação da Necessidade</h2>
+                    <p>O colaborador que necessita utilizar um item do estoque para consumo interno (que não será vendido) deve preencher o formulário de Requisição de Material, detalhando o item, quantidade e o centro de custo responsável.</p>
+                </section>
+                
+                <section class="step-card">
+                    <h2>2. Autorização</h2>
+                    <p>A Requisição de Material deve ser aprovada pelo gestor da área solicitante para validar o consumo.</p>
+                </section>
+                
+                <section class="step-card">
+                    <h2>3. Lançamento no Sistema</h2>
+                    <p>O setor de **Estoque** lança a saída do material no sistema ERP, utilizando a operação "Uso e Consumo". Este lançamento é vital para a precisão do inventário e para o controle fiscal.</p>
+                </section>
+                
+                <section class="step-card">
+                    <h2>4. Emissão da Nota Fiscal de Transferência (Interna)</h2>
+                    <p>Para fins fiscais, dependendo do tipo de produto, pode ser necessária a emissão de uma Nota Fiscal de Transferência para o centro de custo, sem valor comercial, apenas para controle de ICMS.</p>
+                </section>
+            </div>
+        </main>
+    </div>
+</body>
+</html>

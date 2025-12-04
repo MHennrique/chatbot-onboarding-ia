@@ -1,6 +1,5 @@
 import os
 from dotenv import load_dotenv
-from flask import Flask, request, jsonify
 from flask import Flask, request, jsonify, render_template
 from flask_cors import CORS
 import google.generativeai as genai
@@ -47,6 +46,19 @@ def obter_resposta_ia(pergunta_usuario, base_conhecimento, historico_conversa):
         
         Para ver o fluxo completo, acesse: [Fluxo Completo de Orçamento e Pedido](/orcamento-pedido)
     
+    # NOVAS REGRAS PARA OS PROCESSOS ADICIONADOS
+    6. Se a pergunta for sobre 'baixa de uso e consumo', 'dar baixa', ou 'consumo interno', inclua OBRIGATORIAMENTE a seguinte linha no final da sua resposta:
+        
+        Para ver o processo de baixa detalhado, acesse: [Processo de Baixa de Consumo](/baixa-consumo)
+
+    7. Se a pergunta for sobre 'cadastro de produto', 'como cadastrar um item' ou 'dados do produto', inclua OBRIGATORIAMENTE a seguinte linha no final da sua resposta:
+        
+        Para ver o passo a passo de cadastro de produto, acesse: [Passo a Passo de Cadastro](/cadastro-produto)
+
+    8. Se a pergunta for sobre 'emissão de nota fiscal', 'emitir NF' ou 'cancelamento de nota', inclua OBRIGATORIAMENTE a seguinte linha no final da sua resposta:
+        
+        Para ver as regras completas de NF, acesse: [Regras de Emissão de Nota Fiscal](/emissao-nf)
+
     Se a resposta não estiver no CONTEÚDO, diga: 'Desculpe, não encontrei essa informação nos meus documentos.'.
     Não invente informações.
 
@@ -68,6 +80,7 @@ def obter_resposta_ia(pergunta_usuario, base_conhecimento, historico_conversa):
     except Exception as e:
         print(f"Erro na API do Google Gemini: {e}")
         return "Ocorreu um erro ao me conectar com a inteligência artificial."
+
 
 
 @app.route('/ask', methods=['POST'])
@@ -120,6 +133,21 @@ def cadastro_cliente_page():
 def orcamento_pedido_page():
     """Rota para a página do Processo de Orçamento e Pedido."""
     return render_template('artigo_orcamento_pedido.html')
+
+@app.route('/baixa-consumo')
+def baixa_consumo_page():
+    """Rota para a página do processo de Baixa de Uso e Consumo."""
+    return render_template('artigo_baixa_consumo.html')
+
+@app.route('/cadastro-produto')
+def cadastro_produto_page():
+    """Rota para a página do processo de Cadastro de Produto."""
+    return render_template('artigo_cadastro_produto.html')
+
+@app.route('/emissao-nf')
+def emissao_nf_page():
+    """Rota para a página do processo de Emissão da Nota Fiscal."""
+    return render_template('artigo_emissao_nf.html')
 
 
 if __name__ == '__main__':

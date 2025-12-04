@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cadastro de Produto - Rocha Alimentos</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    </head>
+<body>
+    
+    <div id="app-container">
+        <aside id="sidebar-left">
+            <div class="logo-area">
+                <img src="{{ url_for('static', filename='assets/image.png') }}" alt="Logo Rocha Alimentos">
+            </div>
+            <nav class="main-menu">
+                <ul>
+                    <li><a href="{{ url_for('index') }}">🏠 Início</a></li>
+                    <li><a href="{{ url_for('mvv_page') }}">📜 História, Missão e Visão</a></li> 
+                    <li><a href="{{ url_for('contato_page') }}">📞 Contato / Abrir Chamado</a></li>
+                </ul>
+            </nav>
+            <div id="topics-content">
+                <h3 class="merriweather">Artigos Populares</h3>
+                <a href="{{ url_for('ferias_page') }}" class="article-link"><h4>Política de Férias e Licenças</h4></a>
+                <a href="{{ url_for('beneficios_page') }}" class="article-link"><h4>Benefícios Corporativos</h4></a>
+                <a href="{{ url_for('cadastro_cliente_page') }}" class="article-link"><h4>Processo de Cadastro de Cliente</h4></a>
+                <a href="{{ url_for('orcamento_pedido_page') }}" class="article-link"><h4>Orçamento, Pedido e Separação</h4></a>
+                <a href="{{ url_for('cadastro_produto_page') }}" class="article-link active"><h4>Cadastro de Produto (Logística)</h4></a>
+                <a href="{{ url_for('emissao_nf_page') }}" class="article-link"><h4>Emissão da Nota Fiscal (Fiscal)</h4></a>
+                <a href="{{ url_for('baixa_consumo_page') }}" class="article-link"><h4>Baixa de Uso e Consumo (Estoque)</h4></a>
+                <a href="#" class="article-link"><h4>Ferramentas de Trabalho</h4></a>
+            </div>
+        </aside>
+
+        <main id="content-right">
+            <div class="article-content">
+                <h1>Passo a Passo para Cadastro de Produto</h1>
+                <p class="article-meta">Responsável: Compras/Estoque. | Última Revisão: 2025</p>
+                
+                <section class="step-card">
+                    <h2>1. Coleta de Dados Básicos</h2>
+                    <p>Antes de qualquer lançamento, o setor de Compras deve fornecer:</p>
+                    <ul>
+                        <li>Nome/Descrição completa do item (Ex: Feijão Preto Tipo 1 - 1kg).</li>
+                        <li>Unidade de Medida (Ex: UN, CX, PCT).</li>
+                        <li>Peso líquido e bruto.</li>
+                        <li>NCM (Nomenclatura Comum do Mercosul).</li>
+                    </ul>
+                </section>
+                
+                <section class="step-card">
+                    <h2>2. Lançamento Fiscal (Crucial)</h2>
+                    <p>O setor **Fiscal** deve garantir que o produto tenha a tributação correta. Isso inclui:</p>
+                    <ol>
+                        <li>Verificação do Código de Barras (GTIN).</li>
+                        <li>Definição do CST/CFOP.</li>
+                        <li>Configuração das alíquotas de ICMS, PIS e COFINS (Internas e Externas).</li>
+                    </ol>
+                </section>
+                
+                <section class="step-card">
+                    <h2>3. Definição Logística</h2>
+                    <p>O setor de **Estoque/Logística** define:</p>
+                    <ul>
+                        <li>Local de armazenagem preferencial.</li>
+                        <li>Quantidade mínima e máxima de estoque (ponto de ressuprimento).</li>
+                        <li>Configuração de lote e validade (se for perecível).</li>
+                    </ul>
+                </section>
+            </div>
+        </main>
+    </div>
+</body>
+</html>

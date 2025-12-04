@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Emissão da Nota Fiscal - Rocha Alimentos</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    </head>
+<body>
+    
+    <div id="app-container">
+        <aside id="sidebar-left">
+            <div class="logo-area">
+                <img src="{{ url_for('static', filename='assets/image.png') }}" alt="Logo Rocha Alimentos">
+            </div>
+            <nav class="main-menu">
+                <ul>
+                    <li><a href="{{ url_for('index') }}">🏠 Início</a></li>
+                    <li><a href="{{ url_for('mvv_page') }}">📜 História, Missão e Visão</a></li> 
+                    <li><a href="{{ url_for('contato_page') }}">📞 Contato / Abrir Chamado</a></li>
+                </ul>
+            </nav>
+            <div id="topics-content">
+                <h3 class="merriweather">Artigos Populares</h3>
+                <a href="{{ url_for('ferias_page') }}" class="article-link"><h4>Política de Férias e Licenças</h4></a>
+                <a href="{{ url_for('beneficios_page') }}" class="article-link"><h4>Benefícios Corporativos</h4></a>
+                <a href="{{ url_for('cadastro_cliente_page') }}" class="article-link"><h4>Processo de Cadastro de Cliente</h4></a>
+                <a href="{{ url_for('orcamento_pedido_page') }}" class="article-link"><h4>Orçamento, Pedido e Separação</h4></a>
+                <a href="{{ url_for('cadastro_produto_page') }}" class="article-link"><h4>Cadastro de Produto (Logística)</h4></a>
+                <a href="{{ url_for('emissao_nf_page') }}" class="article-link active"><h4>Emissão da Nota Fiscal (Fiscal)</h4></a>
+                <a href="{{ url_for('baixa_consumo_page') }}" class="article-link"><h4>Baixa de Uso e Consumo (Estoque)</h4></a>
+                <a href="#" class="article-link"><h4>Ferramentas de Trabalho</h4></a>
+            </div>
+        </aside>
+
+        <main id="content-right">
+            <div class="article-content">
+                <h1>Emissão e Regras da Nota Fiscal (NF)</h1>
+                <p class="article-meta">Responsável: Fiscal. | Última Revisão: 2025</p>
+                
+                <section class="step-card">
+                    <h2>1. Pré-Requisitos</h2>
+                    <p>A Nota Fiscal só pode ser emitida após a **Liberação Financeira** do pedido e a **Separação** do material pelo estoque. O sistema ERP puxa automaticamente os dados do cliente e do produto.</p>
+                </section>
+                
+                <section class="step-card">
+                    <h2>2. Geração e Validação Fiscal</h2>
+                    <p>O setor **Fiscal** deve conferir e validar os seguintes pontos antes da transmissão para a SEFAZ:</p>
+                    <ul>
+                        <li>CFOP (Código Fiscal de Operações e Prestações) correto.</li>
+                        <li>Tributação (ICMS, PIS, COFINS) configurada.</li>
+                        <li>Cálculo de Frete (se houver).</li>
+                    </ul>
+                </section>
+                
+                <section class="step-card">
+                    <h2>3. Transmissão e DACTE</h2>
+                    <p>A NF-e é transmitida eletronicamente para a SEFAZ. Após a autorização, é gerado o DANFE (Documento Auxiliar da Nota Fiscal Eletrônica) ou DACTE (no caso de transporte).</p>
+                </section>
+                
+                <section class="step-card">
+                    <h2>4. Cancelamento e Correção</h2>
+                    <p>Uma NF-e autorizada pode ser cancelada em até **24 horas**, desde que o material não tenha saído da expedição. Correções após 24 horas devem ser feitas via Carta de Correção (CC-e) no sistema, seguindo rigorosamente a legislação.</p>
+                </section>
+            </div>
+        </main>
+    </div>
+</body>
+</html>
