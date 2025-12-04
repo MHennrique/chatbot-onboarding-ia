@@ -33,15 +33,18 @@ body {
     overflow: hidden;
 }
 
-/* --- COLUNA ESQUERDA (SIDEBAR) --- */
+
 #sidebar-left {
     width: 500px;
-    background-color: var(--color-rocha-light); /* Fundo creme/claro */
+    background-color: var(--color-rocha-light); 
     padding: 20px;
     display: flex;
     flex-direction: column;
     border-right: 1px solid #e9ecef;
     overflow-y: auto;
+
+    flex-shrink: 0; 
+    min-width: 330px;
 }
 
 .logo-area {
