@@ -27,36 +27,42 @@
             <div id="topics-content">
                 <h3 class="merriweather">Artigos Populares</h3>
                 
+                <div class="search-box">
+                    <!-- PONTO B: CAMPO PARA FILTRAGEM DE ARTIGOS -->
+                    <input type="text" id="article-search" placeholder="Buscar artigo por palavra-chave..." class="search-input">
+                </div>
+
+                <!-- PONTO C: LINKS COM ÍCONES -->
                 <a href="{{ url_for('ferias_page') }}" class="article-link">
-                    <h4>Política de Férias e Licenças</h4>
+                    <h4>📅 Política de Férias e Licenças</h4>
                 </a>
                 
                 <a href="{{ url_for('beneficios_page') }}" class="article-link">
-                    <h4>Benefícios Corporativos</h4>
+                    <h4>💰 Benefícios Corporativos</h4>
                 </a>
 
                 <a href="{{ url_for('cadastro_cliente_page') }}" class="article-link">
-                    <h4>Processo de Cadastro de Cliente</h4>
+                    <h4>👤 Processo de Cadastro de Cliente</h4>
                 </a>
 
                 <a href="{{ url_for('orcamento_pedido_page') }}" class="article-link">
-                    <h4>Orçamento, Pedido e Separação</h4>
+                    <h4>📈 Orçamento, Pedido e Separação</h4>
                 </a>
-
-                <a href="#" class="article-link">
-                    <h4>Ferramentas de Trabalho</h4>
+                
+                <a href="{{ url_for('baixa_consumo_page') }}" class="article-link">
+                    <h4>📉 Baixa de Uso e Consumo</h4>
                 </a>
 
                 <a href="{{ url_for('cadastro_produto_page') }}" class="article-link">
-                    <h4>Cadastro de Produto (Logística)</h4>
+                    <h4>📦 Cadastro de Produto</h4>
                 </a>
-
+                
                 <a href="{{ url_for('emissao_nf_page') }}" class="article-link">
-                    <h4>Emissão da Nota Fiscal (Fiscal)</h4>
+                    <h4>📝 Emissão da Nota Fiscal</h4>
                 </a>
 
-                <a href="{{ url_for('baixa_consumo_page')}}" class="article-link">
-                    <h4>Baixa de Uso e Consumo (Estoque)</h4>
+                <a href="#" class="article-link">
+                    <h4>🔧 Ferramentas de Trabalho</h4>
                 </a>
                 
             </div>
@@ -64,13 +70,14 @@
 
         <main id="chat-right">
             <div class="chat-header-main">
-                <h1 class="merriweather">🤖 Assistente de Onboarding</h1>
+                <!-- NOVO NOME DO CHATBOT -->
+                <h1 class="merriweather">💡 Guia Rocha</h1>
                 <p>Olá! Digite sua dúvida sobre processos, benefícios ou estrutura da Rocha Alimentos.</p>
             </div>
             
             <div class="chat-messages" id="chat-messages">
                 <div class="message bot">
-                    <p>Olá! Sou seu assistente virtual. Como posso ajudar com os processos da empresa hoje?</p>
+                    <!-- MENSAGEM DE BOAS-VINDAS SERÁ INSERIDA PELO JS -->
                 </div>
                 
                 <div class="typing-indicator" id="typing-indicator" style="display: none;">

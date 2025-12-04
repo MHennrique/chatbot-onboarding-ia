@@ -1,11 +1,8 @@
-# knowledge_base.py
-
 import os
 import docx
 import pandas as pd
 import PyPDF2
 
-# --- FUNÇÃO DE LEITURA DE DOCUMENTOS ---
 def ler_documentos_pasta(caminho_pasta):
     """Lê todos os arquivos .txt, .docx, .pdf e .csv de uma pasta."""
     base_conhecimento = ""
@@ -28,7 +25,6 @@ def ler_documentos_pasta(caminho_pasta):
                         base_conhecimento += page.extract_text() + "\n"
             elif nome_arquivo.endswith(".csv"):
                 df = pd.read_csv(caminho_completo)
-                # Usamos to_markdown para melhor leitura da IA
                 base_conhecimento += df.to_markdown(index=False) + "\n" 
 
             print(f"  - Arquivo '{nome_arquivo}' lido com sucesso.")
@@ -37,6 +33,5 @@ def ler_documentos_pasta(caminho_pasta):
             
     return base_conhecimento
 
-# --- EXPORTAÇÃO DA BASE DE CONHECIMENTO PRONTA ---
 CONTEUDO_EMPRESA = ler_documentos_pasta('documentos')
 print("\nBase de conhecimento carregada com sucesso!")
