@@ -8,9 +8,11 @@ from knowledge_base import CONTEUDO_EMPRESA
 
 load_dotenv()
 
+# Configurar a API Key do Google (usará a variável de ambiente no Railway)
 genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
 
 app = Flask(__name__)
+# CORS simplificado para funcionar no ambiente de produção
 CORS(app) 
 
 print(f"Conteúdo da empresa importado (Tamanho: {len(CONTEUDO_EMPRESA)} caracteres)")
@@ -18,10 +20,11 @@ print(f"Conteúdo da empresa importado (Tamanho: {len(CONTEUDO_EMPRESA)} caracte
 def obter_resposta_ia(pergunta_usuario, base_conhecimento, historico_conversa):
     """Inicia um chat com o Gemini, usando o histórico para manter o contexto."""
     
+    # O Gemini deve se apresentar como Guia Rocha
     model = genai.GenerativeModel('gemini-2.5-flash')
 
     instrucao_sistema = f"""
-    Você é um chatbot de onboarding da Rocha Alimentos. Responda perguntas baseando-se ESTRITAMENTE no CONTEÚDO fornecido abaixo.
+    Você é o **Guia Rocha**, o chatbot de onboarding da Rocha Alimentos. Responda perguntas baseando-se ESTRITAMENTE no CONTEÚDO fornecido abaixo.
     
     Regras de Link:
     1. Se a pergunta for sobre 'férias', 'solicitar férias' ou 'como tirar férias', inclua OBRIGATORIAMENTE a seguinte linha no final da sua resposta:
@@ -46,7 +49,7 @@ def obter_resposta_ia(pergunta_usuario, base_conhecimento, historico_conversa):
         
         Para ver o fluxo completo, acesse: [Fluxo Completo de Orçamento e Pedido](/orcamento-pedido)
     
-    # NOVAS REGRAS PARA OS PROCESSOS ADICIONADOS
+    # NOVAS REGRAS PARA OS PROCESSOS TÉCNICOS
     6. Se a pergunta for sobre 'baixa de uso e consumo', 'dar baixa', ou 'consumo interno', inclua OBRIGATORIAMENTE a seguinte linha no final da sua resposta:
         
         Para ver o processo de baixa detalhado, acesse: [Processo de Baixa de Consumo](/baixa-consumo)
@@ -59,7 +62,14 @@ def obter_resposta_ia(pergunta_usuario, base_conhecimento, historico_conversa):
         
         Para ver as regras completas de NF, acesse: [Regras de Emissão de Nota Fiscal](/emissao-nf)
 
-    Se a resposta não estiver no CONTEÚDO, diga: 'Desculpe, não encontrei essa informação nos meus documentos.'.
+    # NOVO COMPORTAMENTO PARA RESPOSTAS NEGATIVAS (RESPOSTA INTELIGENTE)
+    Se o conteúdo que você precisa para responder NÃO estiver no CONTEÚDO fornecido:
+    - Mantenha sempre a sua persona de "Guia Rocha" da Rocha Alimentos.
+    - Diga que o tópico não está nos documentos de onboarding.
+    - Sugira ao usuário que use o filtro de artigos ou entre em contato.
+    
+    Exemplo de resposta negativa inteligente: "Como Guia Rocha, não encontrei a informação sobre [TÓPICO] nos documentos de onboarding da empresa. Você pode usar o filtro na lateral para buscar por um artigo relacionado ou abrir um chamado na página [Contato / Abrir Chamado](/contato)."
+    
     Não invente informações.
 
     CONTEÚDO:
@@ -82,6 +92,7 @@ def obter_resposta_ia(pergunta_usuario, base_conhecimento, historico_conversa):
         return "Ocorreu um erro ao me conectar com a inteligência artificial."
 
 
+# --- ROTAS DA API E NAVEGAÇÃO (TODAS AS ROTAS AQUI!) ---
 
 @app.route('/ask', methods=['POST'])
 def ask_chatbot():
@@ -134,6 +145,7 @@ def orcamento_pedido_page():
     """Rota para a página do Processo de Orçamento e Pedido."""
     return render_template('artigo_orcamento_pedido.html')
 
+# NOVAS ROTAS TÉCNICAS (CONSOLIDADAS)
 @app.route('/baixa-consumo')
 def baixa_consumo_page():
     """Rota para a página do processo de Baixa de Uso e Consumo."""
@@ -151,4 +163,5 @@ def emissao_nf_page():
 
 
 if __name__ == '__main__':
+    # Este bloco é o último no arquivo.
     app.run(host='0.0.0.0', port=5000, debug=True)
