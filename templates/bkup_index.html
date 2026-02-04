@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Central de Ajuda | Rocha Alimentos</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700&family=Merriweather:wght@700&display=swap" rel="stylesheet">
+    <style>
+        /* Estilos para a nova navegação por pastas/setores */
+        .sector-folder {
+            margin-bottom: 5px;
+            border-radius: 6px;
+            overflow: hidden;
+        }
+        .sector-header {
+            background: #f1f2f6;
+            padding: 12px 15px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: bold;
+            color: #2D723B;
+            transition: 0.3s;
+            border-left: 4px solid transparent;
+        }
+        .sector-header:hover {
+            background: #e1e2e6;
+            border-left-color: #2D723B;
+        }
+        .sector-content {
+            display: none;
+            background: #fff;
+            padding: 5px 0 10px 15px;
+        }
+        .sector-folder.active .sector-content {
+            display: block;
+        }
+        .sector-folder.active .sector-header {
+            background: #eef2ef;
+            border-left-color: #2D723B;
+        }
+        .sub-article-link {
+            display: block;
+            padding: 8px 10px;
+            color: #555;
+            text-decoration: none;
+            font-size: 0.9rem;
+            border-radius: 4px;
+            margin-right: 10px;
+            transition: 0.2s;
+        }
+        .sub-article-link:hover {
+            background: #f8f9fa;
+            color: #2D723B;
+            padding-left: 15px;
+        }
+        .folder-icon { font-size: 1.1rem; margin-right: 8px; }
+        .arrow-icon { font-size: 0.8rem; transition: 0.3s; }
+        .sector-folder.active .arrow-icon { transform: rotate(180deg); }
+
+        .user-nav { padding: 15px 25px; background: #fff; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; }
+        .admin-badge { background: #2D723B; color: white; padding: 4px 10px; border-radius: 20px; font-size: 0.75rem; text-decoration: none; }
+    </style>
+</head>
+<body>
+
+    <div id="app-container">
+        
+        <aside id="sidebar-left">
+            <div class="logo-area">
+                <img src="{{ url_for('static', filename='assets/image.png') }}" alt="Logo Rocha Alimentos">
+            </div>
+
+            <nav class="main-menu">
+                <ul>
+                    <li><a href="{{ url_for('index') }}" class="active">🏠 Início</a></li>
+                    <li><a href="{{ url_for('contato_page') }}">📞 Suporte / Chamados</a></li>
+                    <li><a href="{{ url_for('logout') }}" style="color: #d63031;">🚪 Sair</a></li>
+                </ul>
+            </nav>
+
+            <div id="topics-content">
+                <h3 class="merriweather" style="margin-bottom: 15px;">Explorar Processos</h3>
+                <input type="text" id="article-search" placeholder="🔍 Buscar por palavra-chave..." class="search-input" style="margin-bottom: 20px;">
+
+                <!-- SETOR: INSTITUCIONAL -->
+                <div class="sector-folder">
+                    <div class="sector-header" onclick="toggleFolder(this)">
+                        <span><span class="folder-icon">🏢</span> Institucional</span>
+                        <span class="arrow-icon">▼</span>
+                    </div>
+                    <div class="sector-content">
+                        <a href="{{ url_for('mvv_page') }}" class="sub-article-link">História e Identidade</a>
+                        <a href="{{ url_for('beneficios_page') }}" class="sub-article-link">Benefícios Corporativos</a>
+                        <a href="{{ url_for('ferias_page') }}" class="sub-article-link">Férias e Licenças</a>
+                    </div>
+                </div>
+
+                <!-- SETOR: COMERCIAL -->
+                <div class="sector-folder">
+                    <div class="sector-header" onclick="toggleFolder(this)">
+                        <span><span class="folder-icon">💼</span> Comercial</span>
+                        <span class="arrow-icon">▼</span>
+                    </div>
+                    <div class="sector-content">
+                        <a href="{{ url_for('cadastro_cliente_page') }}" class="sub-article-link">Cadastro de Cliente</a>
+                        <a href="{{ url_for('orcamento_pedido_page') }}" class="sub-article-link">Orçamentos e Pedidos</a>
+                    </div>
+                </div>
+
+                <!-- SETOR: LOGÍSTICA / OPERAÇÕES -->
+                <div class="sector-folder">
+                    <div class="sector-header" onclick="toggleFolder(this)">
+                        <span><span class="folder-icon">🚚</span> Logística</span>
+                        <span class="arrow-icon">▼</span>
+                    </div>
+                    <div class="sector-content">
+                        <a href="{{ url_for('baixa_consumo_page') }}" class="sub-article-link">Baixa de Uso e Consumo</a>
+                        <a href="{{ url_for('cadastro_produto_page') }}" class="sub-article-link">Cadastro de Itens</a>
+                    </div>
+                </div>
+
+                <!-- SETOR: FISCAL -->
+                <div class="sector-folder">
+                    <div class="sector-header" onclick="toggleFolder(this)">
+                        <span><span class="folder-icon">⚖️</span> Fiscal</span>
+                        <span class="arrow-icon">▼</span>
+                    </div>
+                    <div class="sector-content">
+                        <a href="{{ url_for('emissao_nf_page') }}" class="sub-article-link">Emissão de Notas Fiscais</a>
+                    </div>
+                </div>
+
+            </div>
+        </aside>
+
+        <main id="chat-right">
+            <div class="user-nav">
+                <span>Olá, <strong>{{ user_name }}</strong></span>
+                {% if role == 'admin' %}
+                <a href="{{ url_for('admin_panel') }}" class="admin-badge">⚙️ Painel Admin</a>
+                {% endif %}
+            </div>
+
+            <div class="chat-header-main">
+                <h1 class="merriweather">💡 Guia Rocha</h1>
+                <p>IA treinada nos processos da Rocha Alimentos.</p>
+            </div>
+            
+            <div class="chat-messages" id="chat-messages">
+                <!-- Mensagens aparecerão aqui -->
+                <div class="typing-indicator" id="typing-indicator" style="display: none;">
+                    <span>.</span><span>.</span><span>.</span>
+                </div>
+            </div>
+
+            <div class="chat-input-area">
+                <input type="text" id="user-input" placeholder="Pergunte algo sobre os processos...">
+                <button id="send-button">Enviar</button>
+            </div>
+        </main>
+        
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script>
+        // Função simples para abrir/fechar as pastas
+        function toggleFolder(header) {
+            const folder = header.parentElement;
+            folder.classList.toggle('active');
+        }
+    </script>
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>

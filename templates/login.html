@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login | Zortea IA Solutions</title>
+    <style>
+        :root {
+            --primary: #2D723B;
+            --bg: #f8f9fa;
+            --secondary: #0a1f14;
+        }
+        body {
+            font-family: 'Lato', sans-serif;
+            background-color: var(--bg);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .login-card {
+            background: white;
+            padding: 2.5rem;
+            border-radius: 12px;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 380px;
+            text-align: center;
+        }
+        .logo-zortea {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--secondary);
+            margin-bottom: 0.5rem;
+            display: block;
+        }
+        .logo-zortea span { color: var(--primary); }
+        
+        h2 { color: var(--secondary); margin-bottom: 1.5rem; font-size: 1.2rem; }
+        .form-group { text-align: left; margin-bottom: 1rem; }
+        label { display: block; margin-bottom: 0.4rem; color: #555; font-size: 0.9rem; }
+        input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            box-sizing: border-box;
+            font-size: 1rem;
+        }
+        input:focus { border-color: var(--primary); outline: none; }
+        button {
+            width: 100%;
+            padding: 12px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 1rem;
+            transition: 0.3s;
+        }
+        button:hover { background: #235a2e; }
+        .error { color: #dc3545; background: #f8d7da; padding: 10px; border-radius: 4px; margin-bottom: 1rem; font-size: 0.85rem; }
+    </style>
+</head>
+<body>
+    <div class="login-card">
+        <span class="logo-zortea">Zortea <span>IA Solutions</span></span>
+        <h2>Guia Inteligente</h2>
+        <p style="color: #666; margin-bottom: 2rem; font-size: 0.9rem;">Acesse o portal de treinamento corporativo</p>
+
+        {% with messages = get_flashed_messages() %}
+          {% if messages %}
+            {% for message in messages %}
+              <div class="error">{{ message }}</div>
+            {% endfor %}
+          {% endif %}
+        {% endwith %}
+
+        <form method="POST">
+            <div class="form-group">
+                <label>E-mail Corporativo</label>
+                <input type="email" name="email" required placeholder="ex: suporte@zorteaiasolutions.com.br">
+            </div>
+            <div class="form-group">
+                <label>Senha</label>
+                <input type="password" name="password" required placeholder="Sua senha de acesso">
+            </div>
+            <button type="submit">Entrar no Portal</button>
+        </form>
+        
+        <p style="margin-top: 2rem; font-size: 0.7rem; color: #999;">
+            Powered by Zortea AI Solutions
+        </p>
+    </div>
+</body>
+</html>

@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel Admin | {{ company.name }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        .admin-grid { display: grid; grid-template-columns: 250px 1fr; min-height: 100vh; }
+        .admin-sidebar { background: #2c3e50; color: white; padding: 20px; }
+        .admin-main { padding: 40px; background: #f4f7f6; }
+        .sidebar-nav { list-style: none; padding: 0; margin-top: 20px; }
+        .sidebar-nav a { color: #ecf0f1; text-decoration: none; display: block; padding: 10px; border-radius: 4px; transition: 0.3s; }
+        .sidebar-nav a:hover, .sidebar-nav a.active { background: #34495e; }
+        
+        .card { background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); margin-bottom: 20px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        th, td { text-align: left; padding: 12px; border-bottom: 1px solid #eee; }
+        .status-badge { padding: 4px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: bold; }
+        .status-admin { background: #e3f2fd; color: #1976d2; }
+        .status-user { background: #f1f2f6; color: #2f3542; }
+        .btn-action { background: #2D723B; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; transition: 0.3s; }
+        .btn-danger { background: #d63031; }
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px; }
+        .form-group { display: flex; flex-direction: column; }
+        label { font-size: 0.85rem; color: #666; margin-bottom: 5px; }
+        input, select { padding: 10px; border: 1px solid #ddd; border-radius: 4px; }
+        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); }
+        .modal-content { background: white; margin: 5% auto; padding: 30px; border-radius: 8px; width: 500px; max-width: 90%; }
+        .alert { padding: 12px; border-radius: 4px; margin-bottom: 20px; }
+        .alert-info { background: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+    </style>
+</head>
+<body>
+<div class="admin-grid">
+    <aside class="admin-sidebar">
+        <h2 class="merriweather">Zortea IA Solutions</h2>
+        <nav>
+            <ul class="sidebar-nav">
+                <li><a href="{{ url_for('admin_panel') }}" class="active">👥 Usuários</a></li>
+                <li><a href="{{ url_for('admin_processos') }}">📂 Processos</a></li>
+                <li><a href="{{ url_for('index') }}">💬 Chat</a></li>
+                <li style="margin-top: 30px;"><a href="{{ url_for('logout') }}" style="color: #ff7675;">🚪 Sair</a></li>
+            </ul>
+        </nav>
+    </aside>
+
+    <main class="admin-main">
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-info">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <!-- Formulário de Cadastro -->
+        <div class="card">
+            <h3>Novo Usuário</h3>
+            <form action="{{ url_for('add_user') }}" method="POST">
+                <div class="form-row">
+                    <div class="form-group"><label>Nome</label><input type="text" name="full_name" required></div>
+                    <div class="form-group"><label>E-mail (Login)</label><input type="email" name="email" required></div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group"><label>Senha</label><input type="password" name="password" required></div>
+                    <div class="form-group"><label>Cargo</label><input type="text" name="job_title" placeholder="Ex: Gerente"></div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Acesso</label>
+                        <select name="role"><option value="user">Usuário</option><option value="admin">Admin</option></select>
+                    </div>
+                    <div class="form-group" style="justify-content: center; padding-top: 15px;">
+                        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                            <input type="checkbox" name="must_change_password" style="width: auto;"> Trocar senha no 1º login
+                        </label>
+                    </div>
+                </div>
+                <button type="submit" class="btn-action">Cadastrar</button>
+            </form>
+        </div>
+
+        <!-- Tabela de Usuários -->
+        <div class="card">
+            <h3>Lista de Usuários</h3>
+            <table>
+                <thead>
+                    <tr><th>Nome</th><th>Cargo</th><th>E-mail</th><th>Nível</th><th>Ações</th></tr>
+                </thead>
+                <tbody>
+                    {% for user in users %}
+                    <tr>
+                        <td>{{ user.full_name }}</td>
+                        <td>{{ user.job_title if user.job_title else '---' }}</td>
+                        <td>{{ user.email }}</td>
+                        <td>
+                            <span class="status-badge {% if user.role == 'admin' %}status-admin{% else %}status-user{% endif %}">
+                                {{ user.role.upper() }}
+                            </span>
+                        </td>
+                        <td>
+                            <button class="btn-action" onclick="openEditModal('{{ user.id }}', '{{ user.full_name }}', '{{ user.job_title if user.job_title else '' }}', '{{ user.role }}', {{ 'true' if user.must_change_password else 'false' }})">Editar</button>
+                            {% if user.id != session['user_id'] %}
+                                <a href="{{ url_for('delete_user', user_id=user.id) }}" class="btn-action btn-danger" style="text-decoration: none; display: inline-block;" onclick="return confirm('Deseja realmente excluir este usuário?')">Excluir</a>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </main>
+</div>
+
+<!-- Modal de Edição -->
+<div id="editModal" class="modal">
+    <div class="modal-content">
+        <h3>Editar Usuário</h3>
+        <form id="editForm" method="POST">
+            <div class="form-group"><label>Nome</label><input type="text" name="full_name" id="edit_name" required></div><br>
+            <div class="form-group"><label>Cargo</label><input type="text" name="job_title" id="edit_job"></div><br>
+            <div class="form-group">
+                <label>Acesso</label>
+                <select name="role" id="edit_role"><option value="user">Usuário</option><option value="admin">Admin</option></select>
+            </div><br>
+            <div class="form-group"><label>Nova Senha (deixe em branco para não alterar)</label><input type="password" name="password"></div><br>
+            <div class="form-group" style="padding: 10px 0;">
+                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                    <input type="checkbox" name="must_change_password" id="edit_must_change" style="width: auto;"> Forçar troca de senha
+                </label>
+            </div><br>
+            <div style="display: flex; gap: 10px;">
+                <button type="submit" class="btn-action" style="flex: 1;">Salvar Alterações</button>
+                <button type="button" class="btn-action" style="background:#636e72; flex: 1;" onclick="closeModal()">Cancelar</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    function openEditModal(id, name, job, role, mustChange) {
+        document.getElementById('editForm').action = "/admin/edit_user/" + id;
+        document.getElementById('edit_name').value = name;
+        document.getElementById('edit_job').value = job;
+        document.getElementById('edit_role').value = role;
+        document.getElementById('edit_must_change').checked = mustChange;
+        document.getElementById('editModal').style.display = 'block';
+    }
+    function closeModal() { document.getElementById('editModal').style.display = 'none'; }
+
+    window.onclick = function(event) {
+        let modal = document.getElementById('editModal');
+        if (event.target == modal) { closeModal(); }
+    }
+</script>
+</body>
+</html>
