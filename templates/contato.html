@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Suporte e Canais | Guia Rocha</title>
+    <title>Suporte e Canais | Zortea IA Solutions</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700&family=Merriweather:wght@700&display=swap" rel="stylesheet">
     <style>
         :root {
-            --primary-rocha: #2D723B;
+            --primary-zortea: #2D723B;
             --secondary-zortea: #0a1f14;
             --text-muted: #636e72;
             --bg-page: #f4f7f6;
@@ -25,7 +25,7 @@
             min-height: 100vh;
         }
 
-        /* Sidebar Simplificada */
+        /* Sidebar Zortea Solutions */
         #sidebar-left {
             width: 280px;
             background: #fff;
@@ -36,12 +36,16 @@
         }
 
         .logo-area {
+            background: #0a1f14;
+            padding: 15px;
+            border-radius: 8px;
             text-align: center;
             margin-bottom: 30px;
         }
 
         .logo-area img {
-            max-width: 180px;
+            max-width: 100%;
+            height: auto;
         }
 
         .main-menu ul {
@@ -65,12 +69,12 @@
 
         .main-menu a:hover {
             background: #f0f2f1;
-            color: var(--primary-rocha);
+            color: var(--primary-zortea);
         }
 
         .main-menu a.active {
             background: #eef2ef;
-            color: var(--primary-rocha);
+            color: var(--primary-zortea);
             font-weight: bold;
         }
 
@@ -88,9 +92,10 @@
         }
 
         .support-header h1 {
-            color: var(--primary-rocha);
+            color: var(--secondary-zortea);
             font-size: 2.2rem;
             margin: 0;
+            font-family: 'Merriweather', serif;
         }
 
         /* Grid de Suporte */
@@ -116,32 +121,22 @@
             border-color: #d1d8d5;
         }
 
-        .card-rocha { border-top: 6px solid var(--primary-rocha); }
-        .card-zortea { border-top: 6px solid var(--secondary-zortea); }
+        .card-border-green { border-top: 6px solid var(--primary-zortea); }
+        .card-border-dark { border-top: 6px solid var(--secondary-zortea); }
 
         .support-card h2 {
             font-family: 'Merriweather', serif;
             font-size: 1.6rem;
             margin-top: 0;
             margin-bottom: 20px;
+            color: var(--secondary-zortea);
         }
-
-        .card-rocha h2 { color: var(--primary-rocha); }
-        .card-zortea h2 { color: var(--secondary-zortea); }
 
         .support-description {
             color: var(--text-muted);
             line-height: 1.6;
             margin-bottom: 30px;
             font-size: 1rem;
-        }
-
-        .zortea-logo-box {
-            background: #0a1f14;
-            padding: 15px;
-            border-radius: 8px;
-            display: inline-block;
-            margin-bottom: 20px;
         }
 
         /* Formulários */
@@ -174,7 +169,7 @@
         .form-group select:focus, 
         .form-group textarea:focus {
             outline: none;
-            border-color: var(--primary-rocha);
+            border-color: var(--primary-zortea);
             background: #fdfdfd;
         }
 
@@ -188,13 +183,13 @@
             font-size: 1rem;
             text-transform: uppercase;
             letter-spacing: 1px;
+            background: var(--primary-zortea);
+            color: white;
         }
 
-        .btn-rocha { background: var(--primary-rocha); color: white; }
-        .btn-rocha:hover { background: #235a2e; }
-
-        .btn-zortea { background: var(--secondary-zortea); color: #fff; }
-        .btn-zortea:hover { background: #000; }
+        .btn-submit:hover {
+            background: #235a2e;
+        }
 
         .footer-note {
             margin-top: 40px;
@@ -210,13 +205,13 @@
         
         <aside id="sidebar-left">
             <div class="logo-area">
-                <img src="{{ url_for('static', filename='assets/image.png') }}" alt="Logo Rocha Alimentos">
+                <!-- Logotipo da Zortea Solutions -->
+                <img src="{{ url_for('static', filename='assets/Zortea.jpg') }}" alt="Zortea IA Solutions">
             </div>
 
             <nav class="main-menu">
                 <ul>
                     <li><a href="{{ url_for('index') }}">🏠 Início / Chatbot</a></li>
-                    <li><a href="{{ url_for('mvv_page') }}">📜 História e Identidade</a></li> 
                     <li><a href="{{ url_for('contato_page') }}" class="active">📞 Suporte e Contato</a></li>
                     <li style="margin-top: 30px;"><a href="{{ url_for('logout') }}" style="color: #d63031;">🚪 Sair do Sistema</a></li>
                 </ul>
@@ -225,52 +220,50 @@
 
         <main id="content-right">
             <div class="support-header">
-                <h1 class="merriweather">Canais de Comunicação e Suporte</h1>
-                <p style="color: var(--text-muted);">Estamos aqui para ajudar com suas dúvidas internas ou problemas técnicos.</p>
+                <h1>Canais de Atendimento Zortea</h1>
+                <p style="color: var(--text-muted);">Central de ajuda para implementação, consultoria e suporte técnico.</p>
             </div>
 
             <div class="support-grid">
                 
-                <!-- CARTÃO ROCHA: DÚVIDAS DE PROCESSO -->
-                <div class="support-card card-rocha">
-                    <h2>Dúvidas Internas (Rocha)</h2>
+                <!-- CARTÃO 1: CONSULTORIA DE NEGÓCIO -->
+                <div class="support-card card-border-green">
+                    <h2>Suporte ao Cliente</h2>
                     <p class="support-description">
-                        Use este formulário para falar com o **Departamento de Recursos Humanos (RH)** ou **TI (Infraestrutura)** da Rocha Alimentos sobre processos internos, benefícios ou acesso físico.
+                        Dúvidas sobre a **implantação de processos**, treinamento de equipes ou personalização da sua base de conhecimento inteligente.
                     </p>
                     
                     <form action="#" method="POST">
                         <div class="form-group">
-                            <label>Seu Nome Completo</label>
+                            <label>Nome do Gestor/Solicitante</label>
                             <input type="text" placeholder="Como devemos te chamar?" required>
                         </div>
                         <div class="form-group">
                             <label>E-mail Corporativo</label>
-                            <input type="email" placeholder="seuemail@rochaalimentos.com.br" required>
+                            <input type="email" placeholder="seuemail@empresa.com.br" required>
                         </div>
                         <div class="form-group">
-                            <label>Setor Destinatário</label>
+                            <label>Assunto</label>
                             <select>
-                                <option>Recursos Humanos (RH)</option>
-                                <option>TI - Infraestrutura</option>
-                                <option>Departamento Pessoal</option>
+                                <option>Ajuste de Processo</option>
+                                <option>Novos Documentos</option>
+                                <option>Treinamento de Equipe</option>
+                                <option>Consultoria Estratégica</option>
                             </select>
                         </div>
                         <div class="form-group">
-                            <label>Detalhe sua Dúvida ou Problema</label>
+                            <label>Detalhe sua Necessidade</label>
                             <textarea rows="4" placeholder="Descreva aqui o que você precisa..."></textarea>
                         </div>
-                        <button type="submit" class="btn-submit btn-rocha">Enviar para a Rocha</button>
+                        <button type="submit" class="btn-submit">Enviar para Consultoria</button>
                     </form>
                 </div>
 
-                <!-- CARTÃO ZORTEA: SUPORTE AO SISTEMA -->
-                <div class="support-card card-zortea">
-                    <div class="zortea-logo-box">
-                        <h3 style="color: #4cd137; margin:0; font-family: 'Merriweather';">Zortea <span style="font-weight: 300; font-size: 0.8rem; color: #fff;">AI SOLUTIONS</span></h3>
-                    </div>
-                    <h2>Suporte Técnico</h2>
+                <!-- CARTÃO 2: SUPORTE TÉCNICO (SISTEMA) -->
+                <div class="support-card card-border-dark">
+                    <h2>Suporte Técnico (Plataforma)</h2>
                     <p class="support-description">
-                        Se você encontrou um **bug, erro de resposta do Chatbot** ou problema com a interface do sistema de Onboarding, abra um chamado diretamente com a nossa equipe técnica.
+                        Canal direto para relatar **bugs**, falhas de resposta da IA, problemas na visualização de documentos ou erros de acesso.
                     </p>
                     
                     <form action="#" method="POST">
@@ -281,24 +274,24 @@
                         <div class="form-group">
                             <label>Tipo de Ocorrência</label>
                             <select>
-                                <option>Erro na Resposta (IA confundiu dados)</option>
-                                <option>Problema Visual (Botão/Layout quebrado)</option>
-                                <option>Erro de Acesso (Login/Senha)</option>
-                                <option>Sugestão de Melhoria</option>
+                                <option>Erro na Resposta (IA)</option>
+                                <option>Problema Visual (Interface)</option>
+                                <option>Falha no Visualizador de PDF</option>
+                                <option>Sugestão de Melhoria Técnica</option>
                             </select>
                         </div>
                         <div class="form-group">
                             <label>Evidência ou Descrição do Erro</label>
-                            <textarea rows="4" placeholder="O que aconteceu? Se puder, cole o link da página onde ocorreu o erro."></textarea>
+                            <textarea rows="4" placeholder="O que aconteceu? Se puder, descreva o passo a passo até o erro."></textarea>
                         </div>
-                        <button type="submit" class="btn-submit btn-zortea">Abrir Chamado Técnico</button>
+                        <button type="submit" class="btn-submit" style="background: var(--secondary-zortea);">Abrir Chamado Técnico</button>
                     </form>
                 </div>
 
             </div>
 
             <p class="footer-note">
-                © 2025 Rocha Alimentos | Plataforma de Onboarding Inteligente desenvolvida por Zortea AI Solutions.
+                © 2026 Zortea IA Solutions | Inteligência Artificial Aplicada a Processos Corporativos.
             </p>
         </main>
     </div>

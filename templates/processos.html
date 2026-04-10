@@ -2,79 +2,92 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <title>Processos | {{ company.name }}</title>
+    <title>Processos | Zortea IA</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <style>
-        .admin-grid { display: grid; grid-template-columns: 250px 1fr; min-height: 100vh; }
-        .admin-sidebar { background: #2c3e50; color: white; padding: 20px; }
-        .admin-main { padding: 40px; background: #f4f7f6; }
-        .sidebar-nav { list-style: none; padding: 0; margin-top: 20px; }
-        .sidebar-nav a { color: #ecf0f1; text-decoration: none; display: block; padding: 10px; border-radius: 4px; transition: 0.3s; }
-        .sidebar-nav a:hover, .sidebar-nav a.active { background: #34495e; }
+        .admin-grid { display: grid; grid-template-columns: 260px 1fr; min-height: 100vh; }
+        .admin-sidebar { background: #1a1a1a; color: white; padding: 25px; }
+        .admin-main { padding: 40px; background: #f8f9fa; }
+        .sidebar-nav { list-style: none; padding: 0; margin-top: 30px; }
+        .sidebar-nav a { color: #bdc3c7; text-decoration: none; display: block; padding: 12px; border-radius: 6px; margin-bottom: 5px; }
+        .sidebar-nav a:hover, .sidebar-nav a.active { background: #2D723B; color: white; }
         
-        .card { background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-        .sector-selector { margin-bottom: 30px; }
-        select { width: 100%; padding: 12px; border-radius: 6px; border: 1px solid #ddd; font-size: 1rem; }
-        
+        .card { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
         .upload-area { 
-            border: 2px dashed #bdc3c7; 
-            padding: 50px; 
-            text-align: center; 
-            border-radius: 10px; 
-            background: #fafafa;
-            transition: 0.3s;
-            cursor: not-allowed;
-            opacity: 0.4;
-            pointer-events: none; /* Bloqueia cliques */
+            border: 2px dashed #ddd; padding: 60px; text-align: center; border-radius: 12px; 
+            background: #fafafa; transition: 0.3s; cursor: not-allowed; opacity: 0.5; pointer-events: none;
         }
         .upload-area.active { 
-            border-color: #2D723B; 
-            background: #f0fff4; 
-            opacity: 1; 
-            cursor: pointer;
-            pointer-events: auto; /* Habilita cliques */
+            border-color: #2D723B; background: #f0fff4; opacity: 1; cursor: pointer; pointer-events: auto;
         }
+        .btn-upload { background: #2D723B; color: white; padding: 12px 25px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; }
+        .flash-msg { padding: 15px; border-radius: 8px; margin-bottom: 20px; background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
     </style>
 </head>
 <body>
     <div class="admin-grid">
         <aside class="admin-sidebar">
-            <h2 class="merriweather">Zortea IA Solutions</h2>
-            <nav>
-                <ul class="sidebar-nav">
-                    <li><a href="{{ url_for('admin_panel') }}">👥 Usuários</a></li>
-                    <li><a href="{{ url_for('admin_processos') }}" class="active">📂 Processos</a></li>
-                    <li><a href="{{ url_for('index') }}">💬 Chat</a></li>
-                    <li style="margin-top: 30px;"><a href="{{ url_for('logout') }}" style="color: #ff7675;">🚪 Sair</a></li>
-                </ul>
-            </nav>
+            <h2 style="color:white">Zortea <span style="color:#2D723B">IA</span></h2>
+            <ul class="sidebar-nav">
+                <li><a href="{{ url_for('admin_panel') }}">👥 Usuários</a></li>
+                <li><a href="{{ url_for('admin_processos') }}" class="active">📂 Processos</a></li>
+                <li><a href="{{ url_for('index') }}">💬 Voltar ao Chat</a></li>
+            </ul>
         </aside>
 
         <main class="admin-main">
+            {% with messages = get_flashed_messages() %}
+                {% if messages %}{% for msg in messages %}<div class="flash-msg">{{ msg }}</div>{% endfor %}{% endif %}
+            {% endwith %}
+
             <div class="card">
-                <h2 class="merriweather">Organização de Processos</h2>
-                <p>Selecione um setor para habilitar o carregamento de documentos.</p>
+                <h1>Organização da Nuvem</h1>
+                <p>Selecione o setor de destino e faça o upload dos manuais (PDF ou TXT).</p>
 
-                <div class="sector-selector">
-                    <label><strong>Setor de Destino:</strong></label>
-                    <select id="sector-select" onchange="updateUI()">
-                        <option value="">-- Selecione o setor --</option>
-                        {% for setor in setores %}
-                        <option value="{{ setor }}">{{ setor }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
+                <form id="upload-form" action="{{ url_for('upload_doc') }}" method="POST" enctype="multipart/form-data">
+                    <div style="margin-bottom: 25px;">
+                        <label><strong>1. Setor do Documento:</strong></label><br><br>
+                        <select name="sector" id="sector-select" onchange="updateUI()" style="width:100%; padding:12px; border-radius:8px; border:1px solid #ddd;">
+                            <option value="">-- Escolha o Setor --</option>
+                            {% for setor in setores %}
+                            <option value="{{ setor }}">{{ setor }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
 
-                <div id="drop-zone" class="upload-area">
-                    <div id="instruction-text">
-                        <p style="font-size: 1.2rem; color: #7f8c8d;">⚠️ Selecione um setor acima primeiro</p>
+                    <div id="drop-zone" class="upload-area">
+                        <div id="msg-lock">
+                            <p style="font-size: 1.1rem; color: #999;">⚠️ Bloqueado: Selecione um setor primeiro</p>
+                        </div>
+                        <div id="msg-unlock" style="display: none;">
+                            <p style="color: #2D723B; font-weight: bold;">Setor <span id="label-sector"></span> pronto!</p>
+                            <p>Clique no botão abaixo para escolher o ficheiro.</p>
+                            <input type="file" name="file" id="file-input" style="display: none;" onchange="submitForm()">
+                            <button type="button" class="btn-upload" onclick="document.getElementById('file-input').click()">Selecionar Ficheiro</button>
+                        </div>
                     </div>
-                    <div id="active-content" style="display: none;">
-                        <p style="color: #2D723B; font-weight: bold;">Setor <span id="selected-sector-name"></span> selecionado!</p>
-                        <p>Arraste ficheiros PDF aqui ou clique para selecionar.</p>
-                        <input type="file" id="file-input" multiple style="display: none;">
-                        <button onclick="document.getElementById('file-input').click()" style="background: #2D723B; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; margin-top: 10px;">Selecionar Ficheiros</button>
-                    </div>
+                </form>
+
+                <div style="margin-top: 40px;">
+                    <h3>Documentos Indexados</h3>
+                    <table style="width:100%; border-collapse: collapse;">
+                        <thead>
+                            <tr style="text-align: left; color: #999; border-bottom: 2px solid #eee;">
+                                <th style="padding: 10px;">Arquivo</th>
+                                <th style="padding: 10px;">Setor</th>
+                                <th style="padding: 10px;">Data</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for doc in documents %}
+                            <tr style="border-bottom: 1px solid #f1f1f1;">
+                                <td style="padding: 12px;">📄 {{ doc.filename }}</td>
+                                <td style="padding: 12px;">{{ doc.sector }}</td>
+                                <td style="padding: 12px; font-size: 0.8rem; color: #999;">{{ doc.uploaded_at.strftime('%d/%m/%Y %H:%M') }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </main>
@@ -84,19 +97,26 @@
         function updateUI() {
             const select = document.getElementById('sector-select');
             const dropZone = document.getElementById('drop-zone');
-            const instruction = document.getElementById('instruction-text');
-            const active = document.getElementById('active-content');
-            const sectorNameSpan = document.getElementById('selected-sector-name');
+            const msgLock = document.getElementById('msg-lock');
+            const msgUnlock = document.getElementById('msg-unlock');
+            const label = document.getElementById('label-sector');
 
             if (select.value !== "") {
                 dropZone.classList.add('active');
-                instruction.style.display = 'none';
-                active.style.display = 'block';
-                sectorNameSpan.innerText = select.value;
+                msgLock.style.display = 'none';
+                msgUnlock.style.display = 'block';
+                label.innerText = select.value;
             } else {
                 dropZone.classList.remove('active');
-                instruction.style.display = 'block';
-                active.style.display = 'none';
+                msgLock.style.display = 'block';
+                msgUnlock.style.display = 'none';
+            }
+        }
+
+        function submitForm() {
+            const fileInput = document.getElementById('file-input');
+            if (fileInput.files.length > 0) {
+                document.getElementById('upload-form').submit();
             }
         }
     </script>
