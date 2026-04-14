@@ -1,97 +1,111 @@
-🤖 Guia Rocha - Chatbot de Onboarding SaaS com IA
+🛡️ Zortea IA Solutions - Plataforma SaaS de Onboarding Inteligente
 
-O Guia Rocha evoluiu de um protótipo de chatbot para uma estrutura de software como serviço (SaaS). Ele foi projetado para facilitar o onboarding de colaboradores, permitindo que empresas gerenciem seus próprios usuários e processos internos, com uma IA (Google Gemini) treinada especificamente em seus documentos.
+A Zortea IA Solutions é uma estrutura de software como serviço (SaaS) de última geração, projetada para revolucionar o onboarding e o treinamento corporativo. A plataforma permite que empresas criem sua própria "Nuvem de Processos", onde uma Inteligência Artificial (Google Gemini) é treinada em tempo real com os documentos (PDF/TXT) enviados pelos administradores.
 
-✨ Funcionalidades Implementadas
+✨ Funcionalidades Avançadas
 
-🛡️ Autenticação e Segurança
+🏢 Arquitetura Multi-Tenant (Nuvem Privada)
 
-Login Centralizado: Sistema de autenticação com hash de senha (werkzeug.security).
+Isolamento de Dados: Cada empresa possui sua própria base de usuários e documentos.
 
-Níveis de Acesso (RBAC): Diferenciação entre admin (acesso ao painel) e user (acesso ao chat).
+Identidade Visual Customizada: Interface limpa e profissional focada na experiência do colaborador.
 
-Troca de Senha Obrigatória: Recurso para forçar o colaborador a definir uma nova senha no primeiro acesso para garantir a privacidade.
+💬 IA com Tecnologia RAG (Retrieval-Augmented Generation)
 
-Redirecionamento Inteligente: Admins são levados ao Painel de Controle, enquanto usuários comuns vão direto para a Central de Ajuda.
+Leitura Dinâmica: A IA não apenas conversa, ela "estuda" os manuais e documentos enviados para a pasta documentos/.
 
-👥 Gestão Administrativa (Painel Admin)
+Links Inteligentes: Ao responder uma dúvida, o Guia Zortea fornece automaticamente um link direto para a página de visualização do documento de origem.
 
-Dashboard de Usuários: CRUD completo (Criar, Editar, Excluir) de colaboradores.
+Modelo Estável: Utilização do Gemini 1.5 Flash para respostas ultra-rápidas e precisas.
 
-Gestão de Cargos: Atribuição de cargos para personalização da experiência.
+📂 Gestão de Processos e Cloud
 
-Painel de Processos: Interface organizada por setores (Administrativo, Comercial, Logística, etc.) para futura indexação de documentos.
+Upload Automatizado: Painel administrativo para envio de manuais organizados por setores (Institucional, Comercial, Logística, etc.).
 
-💬 Inteligência Artificial
+Visualizador Próprio: Sistema integrado para leitura de PDFs e arquivos de texto sem sair da plataforma.
 
-IA Contextual: Google Gemini integrado com histórico de conversa e persona "Guia Rocha".
+Organização Física: Armazenamento inteligente na raiz do projeto (/documentos/{company_id}/{setor}).
 
-Links Inteligentes: A IA sugere links internos para artigos de ajuda com base no assunto da pergunta.
+👥 Gestão Administrativa e Segurança
 
-Suporte a Markdown: Respostas formatadas para melhor leitura técnica.
+Controle de Acessos (RBAC): Diferenciação total entre administradores de sistema e colaboradores.
+
+Segurança de Dados: Senhas criptografadas com hash de alta segurança e proteção de rotas via decoradores Python.
+
+Central de Suporte: Canais dedicados para suporte técnico da plataforma e consultoria estratégica.
 
 🛠️ Tecnologias Utilizadas
 
 Backend
 
-Python / Flask: Motor principal da aplicação.
+Python / Flask: Core da aplicação SaaS.
 
-SQLAlchemy: ORM para comunicação com o banco de dados.
+SQLAlchemy: ORM para gestão de banco de dados relacional.
 
-PostgreSQL: Banco de dados relacional para persistência de empresas, usuários e documentos.
+PostgreSQL: Persistência de dados escalável.
 
-Google Generative AI: Integração com o modelo Gemini 2.5 Flash.
+Google Generative AI: Integração com o modelo Gemini 1.5 Flash.
+
+PyPDF2: Extração e processamento de texto de arquivos PDF.
 
 Frontend
 
-HTML5 / CSS3: Layout responsivo com design focado em produtividade.
+HTML5 / CSS3: Layout moderno com design "Apple-like" e responsividade total.
 
-JavaScript (Vanilla): Lógica de chat, modais de edição e interatividade na página de processos.
+JavaScript (Vanilla): Lógica de chat em tempo real, manipulação de DOM e integração de API.
 
-Marked.js: Renderização de Markdown no lado do cliente.
-
-📂 Estrutura do Banco de Dados
-
-O projeto utiliza uma estrutura Multi-Tenant (Multitenat):
-
-Companies (Empresas): Armazena os dados da organização.
-
-Users (Usuários): Vinculados a uma empresa, com campos para e-mail (login), senha criptografada, cargo e permissões.
-
-Documents (Próxima Fase): Registro de caminhos de arquivos vinculados a setores específicos.
+Marked.js: Renderização de respostas da IA em Markdown.
 
 🚀 Como Executar o Projeto
 
-Pré-requisitos
+1. Pré-requisitos
 
 Python 3.9+
 
-PostgreSQL instalado e rodando.
+PostgreSQL
 
-Chave de API do Google AI Studio.
+Chave de API do Google AI Studio
 
-Configuração
+2. Instalação
 
-Instale as dependências:
+Instale as dependências necessárias:
 
-pip install flask flask-sqlalchemy flask-cors psycopg2-binary python-dotenv google-generativeai
-
-
-Configure o .env:
-
-GOOGLE_API_KEY="SUA_CHAVE"
-DATABASE_URL="postgresql://postgres:SUA_SENHA@localhost:5432/guia_inteligente_db"
-SECRET_KEY="uma_chave_segura"
+pip install flask flask-sqlalchemy flask-cors psycopg2-binary python-dotenv google-generativeai PyPDF2
 
 
-Inicie a Aplicação:
+3. Configuração do Ambiente (.env)
+
+Crie um arquivo .env na raiz do projeto:
+
+GOOGLE_API_KEY="SUA_CHAVE_AQUI"
+DATABASE_URL="postgresql://postgres:SENHA@localhost:5432/zortea_saas_db"
+SECRET_KEY="sua_chave_secreta_para_sessoes"
+
+
+4. Inicialização
+
+Inicie a aplicação:
 
 python app.py
 
 
-O sistema criará as tabelas e o usuário admin automaticamente no primeiro acesso.
+O sistema criará automaticamente a estrutura de pastas e os usuários administradores iniciais no primeiro acesso.
 
-✒️ Autor e Evolução do Projeto
+🌐 Infraestrutura e Deploy
 
-Projeto originalmente idealizado por Marcos Henrique (MHennrique).
-Atualmente em fase de transformação para modelo de negócio SaaS, focado em escalabilidade corporativa.
+O projeto está preparado para rodar em servidores VPS (Ubuntu 22.04 LTS) com as seguintes camadas:
+
+Gunicorn: Servidor de aplicação WSGI.
+
+Nginx: Proxy reverso e gerenciamento de certificados SSL.
+
+Certbot: Segurança via HTTPS.
+
+✒️ Evolução e Autor
+
+Este projeto evoluiu do protótipo "Guia Rocha" para uma solução SaaS robusta sob a marca Zortea IA Solutions.
+
+Desenvolvido por: Marcos Henrique (MHennrique)
+Propósito: Escalabilidade corporativa e democratização da IA em processos internos.
+
+© 2026 Zortea IA Solutions | Inteligência Artificial Aplicada.

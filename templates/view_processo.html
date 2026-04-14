@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ doc.filename }} | Guia Zortea</title>
+    <link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700&family=Merriweather:wght@700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #2D723B;
+            --secondary: #0a1f14;
+            --bg-light: #f4f7f6;
+        }
+
+        body { 
+            font-family: 'Lato', sans-serif; 
+            background-color: var(--bg-light); 
+            margin: 0; 
+            padding: 20px; 
+            color: #2d3436;
+        }
+
+        .container { 
+            max-width: 1100px; 
+            margin: 0 auto; 
+            background: white; 
+            padding: 40px; 
+            border-radius: 16px; 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.08); 
+        }
+
+        .header { 
+            border-bottom: 2px solid #eef2ef; 
+            padding-bottom: 25px; 
+            margin-bottom: 30px; 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+        }
+
+        .header h1 { 
+            font-family: 'Merriweather', serif; 
+            color: var(--secondary); 
+            margin: 0; 
+            font-size: 1.8rem; 
+        }
+
+        .back-btn { 
+            background: var(--primary); 
+            color: white; 
+            text-decoration: none; 
+            padding: 12px 24px; 
+            border-radius: 8px; 
+            font-weight: bold; 
+            transition: 0.3s; 
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .back-btn:hover { 
+            background: #235a2e; 
+            transform: translateX(-5px);
+        }
+
+        .meta-info { 
+            background: #f8f9fa;
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+            font-size: 0.95rem;
+            border-left: 5px solid var(--primary);
+        }
+
+        .meta-info strong { color: var(--secondary); }
+
+        .doc-viewer { 
+            border: 1px solid #ddd; 
+            border-radius: 12px; 
+            overflow: hidden; 
+            background: #525659; 
+            height: 80vh; 
+            box-shadow: inset 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        iframe { 
+            width: 100%; 
+            height: 100%; 
+            border: none; 
+        }
+
+        .fallback-msg {
+            padding: 50px;
+            text-align: center;
+            color: #666;
+        }
+
+        .fallback-msg a {
+            color: var(--primary);
+            font-weight: bold;
+            text-decoration: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1>📄 {{ doc.filename }}</h1>
+            <a href="{{ url_for('index') }}" class="back-btn">
+                <span>←</span> Voltar ao Guia Zortea
+            </a>
+        </header>
+
+        <div class="meta-info">
+            <span>Setor: <strong>{{ doc.sector }}</strong></span>
+            <span style="margin: 0 15px; color: #ccc;">|</span>
+            <span>Data de Indexação: <strong>{{ doc.uploaded_at.strftime('%d/%m/%Y às %H:%M') }}</strong></span>
+            <span style="margin: 0 15px; color: #ccc;">|</span>
+            <span>ID: <strong>#{{ doc.id }}</strong></span>
+        </div>
+
+        <div class="doc-viewer">
+            {% if doc.filename.lower().endswith('.pdf') %}
+                <!-- A barra inicial "/" é vital para que o navegador busque a partir da raiz do domínio -->
+                <iframe src="/{{ doc.filepath }}#toolbar=0" title="Visualizador de PDF Zortea"></iframe>
+            {% elif doc.filename.lower().endswith('.txt') %}
+                <iframe src="/{{ doc.filepath }}" title="Visualizador de Texto Zortea"></iframe>
+            {% else %}
+                <div class="fallback-msg">
+                    <p>Este formato de ficheiro não permite visualização direta.</p>
+                    <a href="/{{ doc.filepath }}" target="_blank">Clique aqui para descarregar o ficheiro original</a>
+                </div>
+            {% endif %}
+        </div>
+        
+        <p style="margin-top: 20px; font-size: 0.8rem; color: #999; text-align: center;">
+            © 2026 Zortea IA Solutions - Visualizador de Nuvem Protegido
+        </p>
+    </div>
+</body>
+</html>

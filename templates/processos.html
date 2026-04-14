@@ -2,36 +2,82 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <title>Processos | Zortea IA</title>
+    <title>Processos | Zortea IA Solutions</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <style>
+        :root {
+            --primary: #2D723B;
+            --secondary: #0a1f14;
+            --bg-light: #f8f9fa;
+        }
+
         .admin-grid { display: grid; grid-template-columns: 260px 1fr; min-height: 100vh; }
-        .admin-sidebar { background: #1a1a1a; color: white; padding: 25px; }
-        .admin-main { padding: 40px; background: #f8f9fa; }
-        .sidebar-nav { list-style: none; padding: 0; margin-top: 30px; }
-        .sidebar-nav a { color: #bdc3c7; text-decoration: none; display: block; padding: 12px; border-radius: 6px; margin-bottom: 5px; }
-        .sidebar-nav a:hover, .sidebar-nav a.active { background: #2D723B; color: white; }
         
+        /* Sidebar Admin */
+        .admin-sidebar { background: var(--secondary); color: white; padding: 25px; }
+        .admin-sidebar h2 { font-size: 1.5rem; margin-bottom: 30px; }
+        .sidebar-nav { list-style: none; padding: 0; }
+        .sidebar-nav li { margin-bottom: 5px; }
+        .sidebar-nav a { 
+            color: #bdc3c7; 
+            text-decoration: none; 
+            display: block; 
+            padding: 12px; 
+            border-radius: 6px; 
+            transition: 0.3s;
+        }
+        .sidebar-nav a:hover, .sidebar-nav a.active { background: var(--primary); color: white; }
+
+        /* Área Principal */
+        .admin-main { padding: 40px; background: var(--bg-light); }
         .card { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+        
+        /* Área de Upload */
         .upload-area { 
-            border: 2px dashed #ddd; padding: 60px; text-align: center; border-radius: 12px; 
-            background: #fafafa; transition: 0.3s; cursor: not-allowed; opacity: 0.5; pointer-events: none;
+            border: 2px dashed #ddd; 
+            padding: 50px; 
+            text-align: center; 
+            border-radius: 12px; 
+            background: #fafafa; 
+            transition: 0.3s; 
+            cursor: not-allowed; 
+            opacity: 0.5; 
+            pointer-events: none;
+            margin-top: 20px;
         }
         .upload-area.active { 
-            border-color: #2D723B; background: #f0fff4; opacity: 1; cursor: pointer; pointer-events: auto;
+            border-color: var(--primary); 
+            background: #f0fff4; 
+            opacity: 1; 
+            cursor: pointer; 
+            pointer-events: auto;
         }
-        .btn-upload { background: #2D723B; color: white; padding: 12px 25px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; }
+        .btn-upload { background: var(--primary); color: white; padding: 12px 25px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; }
+        
+        /* Tabela de Documentos */
+        table { width: 100%; border-collapse: collapse; margin-top: 30px; }
+        th { text-align: left; padding: 15px; color: #666; border-bottom: 2px solid #eee; font-size: 0.85rem; text-transform: uppercase; }
+        td { padding: 15px; border-bottom: 1px solid #f1f1f1; font-size: 0.95rem; }
+        
+        .file-link { color: var(--primary); text-decoration: none; font-weight: bold; }
+        .file-link:hover { text-decoration: underline; }
+        
+        .btn-delete { color: #d63031; text-decoration: none; font-size: 0.85rem; font-weight: bold; }
+        .btn-delete:hover { text-decoration: underline; }
+        
+        .sector-badge { background: #eef2ef; color: var(--primary); padding: 4px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: bold; }
+        
         .flash-msg { padding: 15px; border-radius: 8px; margin-bottom: 20px; background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
     </style>
 </head>
 <body>
     <div class="admin-grid">
         <aside class="admin-sidebar">
-            <h2 style="color:white">Zortea <span style="color:#2D723B">IA</span></h2>
+            <h2 style="color:white">Zortea <span style="color:var(--primary)">IA</span></h2>
             <ul class="sidebar-nav">
                 <li><a href="{{ url_for('admin_panel') }}">👥 Usuários</a></li>
                 <li><a href="{{ url_for('admin_processos') }}" class="active">📂 Processos</a></li>
-                <li><a href="{{ url_for('index') }}">💬 Voltar ao Chat</a></li>
+                <li style="margin-top: 40px;"><a href="{{ url_for('index') }}">💬 Voltar ao Chat</a></li>
             </ul>
         </aside>
 
@@ -41,13 +87,13 @@
             {% endwith %}
 
             <div class="card">
-                <h1>Organização da Nuvem</h1>
-                <p>Selecione o setor de destino e faça o upload dos manuais (PDF ou TXT).</p>
+                <h1>Nuvem de Processos</h1>
+                <p>Gerencie os manuais da <strong>Zortea IA Solutions</strong>. Escolha o setor para habilitar o envio.</p>
 
                 <form id="upload-form" action="{{ url_for('upload_doc') }}" method="POST" enctype="multipart/form-data">
                     <div style="margin-bottom: 25px;">
-                        <label><strong>1. Setor do Documento:</strong></label><br><br>
-                        <select name="sector" id="sector-select" onchange="updateUI()" style="width:100%; padding:12px; border-radius:8px; border:1px solid #ddd;">
+                        <label><strong>1. Selecione o Setor de Destino:</strong></label><br><br>
+                        <select name="sector" id="sector-select" onchange="updateUI()" style="width:100%; padding:14px; border-radius:8px; border:1px solid #ddd; font-size: 1rem;">
                             <option value="">-- Escolha o Setor --</option>
                             {% for setor in setores %}
                             <option value="{{ setor }}">{{ setor }}</option>
@@ -57,33 +103,53 @@
 
                     <div id="drop-zone" class="upload-area">
                         <div id="msg-lock">
-                            <p style="font-size: 1.1rem; color: #999;">⚠️ Bloqueado: Selecione um setor primeiro</p>
+                            <p style="font-size: 1.1rem; color: #999;">⚠️ Selecione um setor acima para liberar o upload</p>
                         </div>
                         <div id="msg-unlock" style="display: none;">
-                            <p style="color: #2D723B; font-weight: bold;">Setor <span id="label-sector"></span> pronto!</p>
-                            <p>Clique no botão abaixo para escolher o ficheiro.</p>
+                            <p style="color: var(--primary); font-weight: bold; font-size: 1.2rem;">Setor <span id="label-sector"></span> pronto!</p>
+                            <p>Clique abaixo para selecionar o arquivo PDF ou TXT.</p>
                             <input type="file" name="file" id="file-input" style="display: none;" onchange="submitForm()">
                             <button type="button" class="btn-upload" onclick="document.getElementById('file-input').click()">Selecionar Ficheiro</button>
                         </div>
                     </div>
                 </form>
 
-                <div style="margin-top: 40px;">
-                    <h3>Documentos Indexados</h3>
-                    <table style="width:100%; border-collapse: collapse;">
+                <div style="margin-top: 50px;">
+                    <h3>Ficheiros Indexados</h3>
+                    <table>
                         <thead>
-                            <tr style="text-align: left; color: #999; border-bottom: 2px solid #eee;">
-                                <th style="padding: 10px;">Arquivo</th>
-                                <th style="padding: 10px;">Setor</th>
-                                <th style="padding: 10px;">Data</th>
+                            <tr>
+                                <th>Nome do Arquivo</th>
+                                <th>Setor</th>
+                                <th>Data de Envio</th>
+                                <th style="text-align: right;">Ações</th>
                             </tr>
                         </thead>
                         <tbody>
                             {% for doc in documents %}
-                            <tr style="border-bottom: 1px solid #f1f1f1;">
-                                <td style="padding: 12px;">📄 {{ doc.filename }}</td>
-                                <td style="padding: 12px;">{{ doc.sector }}</td>
-                                <td style="padding: 12px; font-size: 0.8rem; color: #999;">{{ doc.uploaded_at.strftime('%d/%m/%Y %H:%M') }}</td>
+                            <tr>
+                                <td>
+                                    <!-- Link que abre o visualizador dinâmico -->
+                                    <a href="{{ url_for('visualizar_processo', doc_id=doc.id) }}" class="file-link" target="_blank">
+                                        📄 {{ doc.filename }}
+                                    </a>
+                                </td>
+                                <td><span class="sector-badge">{{ doc.sector }}</span></td>
+                                <td style="color: #999; font-size: 0.85rem;">{{ doc.uploaded_at.strftime('%d/%m/%Y %H:%M') }}</td>
+                                <td style="text-align: right;">
+                                    <!-- Rota de exclusão para permitir substituir arquivos -->
+                                    <a href="{{ url_for('delete_doc', doc_id=doc.id) }}" 
+                                       class="btn-delete" 
+                                       onclick="return confirm('Deseja remover este processo da nuvem? Esta ação não pode ser desfeita.')">
+                                        Excluir
+                                    </a>
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="4" style="text-align: center; color: #999; padding: 30px;">
+                                    Nenhum documento encontrado na nuvem.
+                                </td>
                             </tr>
                             {% endfor %}
                         </tbody>

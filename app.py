@@ -22,7 +22,7 @@ app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv("DATABASE_URL")
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
-# Pasta de documentos na raiz conforme solicitado
+# Pasta de documentos na raiz conforme solicitado (site/documentos)
 UPLOAD_FOLDER = 'documentos'
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 if not os.path.exists(UPLOAD_FOLDER):
@@ -131,7 +131,7 @@ def admin_required(f):
 # --- LÓGICA DA IA ---
 
 def obter_resposta_ia(pergunta, base_conhecimento, historico, user_name, company_name):
-    # Usando o modelo gemini-1.5-flash
+    # Usando o modelo gemini-1.5-flash para evitar erros 404
     model = genai.GenerativeModel('gemini-1.5-flash')
     
     prompt_sistema = f"""
@@ -142,7 +142,7 @@ def obter_resposta_ia(pergunta, base_conhecimento, historico, user_name, company
     1. Baseia-te EXCLUSIVAMENTE nos documentos fornecidos abaixo.
     2. Se a resposta estiver num documento, resume-a e inclui obrigatoriamente o link no final:
        [Ver documento completo: NOME](/processo/ID)
-    3. Nunca menciones 'Rocha Alimentos' ou 'Guia Rocha'. Tua identidade é Guia Zortea.
+    3. Nunca menciones 'Rocha Alimentos' ou 'Guia Rocha'. Tua identidade única é Guia Zortea.
     4. Sê profissional, tecnológico e cordial.
     
     CONTEÚDO DOS DOCUMENTOS:
@@ -169,7 +169,7 @@ def login():
             session['user_name'] = user.full_name
             session['role'] = user.role
             return redirect(url_for('admin_panel' if user.role == 'admin' else 'index'))
-        flash("E-mail ou palavra-passe incorretos.")
+        flash("E-mail ou senha incorretos.")
     return render_template('login.html')
 
 @app.route('/logout')
@@ -190,6 +190,7 @@ def index():
         docs_by_sector[d.sector].append(d)
     return render_template('index.html', user_name=session['user_name'], company_name=user.company.name, docs_by_sector=docs_by_sector, role=session.get('role'))
 
+# Rota para servir os arquivos físicos do servidor para o navegador
 @app.route('/documentos/<path:filename>')
 @login_required
 def servir_documento(filename):
@@ -214,7 +215,6 @@ def contato_page():
 def mvv_page():
     return render_template('mvv_historia.html')
 
-# Rotas de artigos adicionais para evitar BuildError
 @app.route('/ferias')
 @login_required
 def ferias_page(): return render_template('artigo_ferias.html')
@@ -279,12 +279,13 @@ def delete_user(user_id):
 def upload_doc():
     sector = request.form.get('sector')
     if 'file' not in request.files or sector == "": 
-        flash("Seleciona o ficheiro e o setor.")
+        flash("Selecione o ficheiro e o setor.")
         return redirect(url_for('admin_processos'))
     
     file = request.files['file']
     if file and file.filename != '':
         filename = secure_filename(file.filename)
+        # Caminho físico: site/documentos/ID_EMPRESA/SETOR/ARQUIVO
         rel_dir = os.path.join(str(session['company_id']), sector)
         abs_dir = os.path.join(app.root_path, app.config['UPLOAD_FOLDER'], rel_dir)
         
@@ -293,11 +294,32 @@ def upload_doc():
         filepath_abs = os.path.join(abs_dir, filename)
         file.save(filepath_abs)
         
+        # Caminho relativo para o banco (compatível com a rota de documentos)
         db_path = os.path.join(app.config['UPLOAD_FOLDER'], rel_dir, filename).replace('\\', '/')
+        
         new_doc = Document(company_id=session['company_id'], filename=filename, filepath=db_path, sector=sector)
         db.session.add(new_doc)
         db.session.commit()
-        flash("Documento armazenado com sucesso!")
+        flash(f"Documento '{filename}' armazenado com sucesso!")
+    return redirect(url_for('admin_processos'))
+
+@app.route('/admin/delete_doc/<int:doc_id>')
+@login_required
+@admin_required
+def delete_doc(doc_id):
+    """Exclui o documento do banco e o arquivo físico do servidor."""
+    doc = db.session.get(Document, doc_id)
+    if doc and doc.company_id == session['company_id']:
+        try:
+            abs_path = os.path.join(app.root_path, doc.filepath)
+            if os.path.exists(abs_path):
+                os.remove(abs_path)
+        except Exception as e:
+            print(f"Erro ao remover arquivo físico: {e}")
+            
+        db.session.delete(doc)
+        db.session.commit()
+        flash("Documento removido da nuvem Zortea.")
     return redirect(url_for('admin_processos'))
 
 @app.route('/ask', methods=['POST'])
