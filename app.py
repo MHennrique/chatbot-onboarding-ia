@@ -7,11 +7,13 @@ from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
 import google.generativeai as genai
+from google.generativeai.types import HarmCategory, HarmBlockThreshold
 from PyPDF2 import PdfReader
 
 # --- CONFIGURAÇÕES ---
 load_dotenv()
-genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
+api_key = os.getenv("GOOGLE_API_KEY")
+genai.configure(api_key=api_key)
 
 app = Flask(__name__)
 CORS(app)
@@ -22,7 +24,7 @@ app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv("DATABASE_URL")
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
-# Pasta de documentos na raiz conforme solicitado (site/documentos)
+# Pasta de documentos
 UPLOAD_FOLDER = 'documentos'
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 if not os.path.exists(UPLOAD_FOLDER):
@@ -58,10 +60,45 @@ class Document(db.Model):
     sector = db.Column(db.String(100), nullable=False) 
     uploaded_at = db.Column(db.DateTime, default=db.func.current_timestamp())
 
+# --- DECORADORES ---
+
+def login_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if 'user_id' not in session: return redirect(url_for('login'))
+        return f(*args, **kwargs)
+    return decorated_function
+
+def admin_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if session.get('role') != 'admin': return redirect(url_for('index'))
+        return f(*args, **kwargs)
+    return decorated_function
+
 # --- FUNÇÕES AUXILIARES ---
 
+def verificar_disponibilidade_ia():
+    """Imprime no terminal os modelos disponíveis para validar a chave e conexão."""
+    print("\n" + "="*45)
+    print("🛠️ DIAGNÓSTICO DE IA ZORTEA SOLUTIONS")
+    print("="*45)
+    if not api_key:
+        print("❌ ERRO: GOOGLE_API_KEY não encontrada no seu .env")
+        return
+    
+    try:
+        modelos = genai.list_models()
+        print("✅ Conexão com Google AI Studio: ESTABELECIDA")
+        print("📋 Modelos disponíveis para sua conta:")
+        for m in modelos:
+            if 'generateContent' in m.supported_generation_methods:
+                print(f"   - {m.name}")
+    except Exception as e:
+        print(f"❌ ERRO AO CONECTAR: {str(e)}")
+    print("="*45 + "\n")
+
 def seed_data():
-    """Garante a criação da Zortea IA Solutions e seus administradores."""
     company_name = "Zortea IA Solutions"
     company = Company.query.filter_by(name=company_name).first()
     if not company:
@@ -87,7 +124,7 @@ def seed_data():
     db.session.commit()
 
 def extrair_conteudo_documentos(company_id):
-    """Extrai texto dos PDFs e TXTs para alimentar o contexto da IA."""
+    """Lê o conteúdo textual dos arquivos salvos para a IA."""
     texto_consolidado = ""
     docs = Document.query.filter_by(company_id=company_id).all()
     for doc in docs:
@@ -106,56 +143,57 @@ def extrair_conteudo_documentos(company_id):
                     content += f.read() + "\n"
             
             if content:
-                texto_consolidado += f"\n[ID_DOCUMENTO: {doc.id} | NOME: {doc.filename}]\n"
+                texto_consolidado += f"\n[DOCUMENTO ID: {doc.id} NOME: {doc.filename}]\n"
                 texto_consolidado += content + "\n"
         except Exception as e:
-            print(f"Erro ao ler {doc.filename}: {e}")
+            print(f"Erro ao ler arquivo {doc.filename}: {e}")
     return texto_consolidado
 
-# --- DECORADORES ---
+# --- MOTOR DE IA RESILIENTE ---
 
-def login_required(f):
-    @wraps(f)
-    def decorated_function(*args, **kwargs):
-        if 'user_id' not in session: return redirect(url_for('login'))
-        return f(*args, **kwargs)
-    return decorated_function
-
-def admin_required(f):
-    @wraps(f)
-    def decorated_function(*args, **kwargs):
-        if session.get('role') != 'admin': return redirect(url_for('index'))
-        return f(*args, **kwargs)
-    return decorated_function
-
-# --- LÓGICA DA IA ---
-
-def obter_resposta_ia(pergunta, base_conhecimento, historico, user_name, company_name):
-    # Usando o modelo gemini-1.5-flash para evitar erros 404
-    model = genai.GenerativeModel('gemini-1.5-flash')
+def obter_resposta_ia(pergunta, base_conhecimento, user_name, company_name):
+    # Lista atualizada com os modelos que apareceram no seu diagnóstico de sucesso
+    model_list = ['models/gemini-2.0-flash', 'models/gemini-2.5-flash', 'models/gemini-1.5-flash']
     
+    safety_settings = {
+        HarmCategory.HARM_CATEGORY_HARASSMENT: HarmBlockThreshold.BLOCK_NONE,
+        HarmCategory.HARM_CATEGORY_HATE_SPEECH: HarmBlockThreshold.BLOCK_NONE,
+        HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT: HarmBlockThreshold.BLOCK_NONE,
+        HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT: HarmBlockThreshold.BLOCK_NONE,
+    }
+
     prompt_sistema = f"""
-    És o Guia Zortea IA Solutions da empresa {company_name}.
-    Utilizador: {user_name}.
+    Identidade: Você é o Guia Zortea IA Solutions, especialista em processos da {company_name}.
+    Contexto do Usuário: {user_name}.
     
-    REGRAS CRÍTICAS:
-    1. Baseia-te EXCLUSIVAMENTE nos documentos fornecidos abaixo.
-    2. Se a resposta estiver num documento, resume-a e inclui obrigatoriamente o link no final:
-       [Ver documento completo: NOME](/processo/ID)
-    3. Nunca menciones 'Rocha Alimentos' ou 'Guia Rocha'. Tua identidade única é Guia Zortea.
-    4. Sê profissional, tecnológico e cordial.
-    
-    CONTEÚDO DOS DOCUMENTOS:
-    {base_conhecimento}
-    """
-    
-    try:
-        response = model.generate_content(prompt_sistema + "\n\nPergunta do utilizador: " + pergunta)
-        return response.text
-    except Exception as e:
-        return f"Erro na IA Zortea: {str(e)}"
+    BASE DE CONHECIMENTO (PROCESSOS):
+    {base_conhecimento if base_conhecimento else "Nenhum manual encontrado."}
 
-# --- ROTAS DE AUTENTICAÇÃO ---
+    REGRAS DE OURO:
+    1. Responda apenas sobre a empresa Zortea IA Solutions e seus processos.
+    2. Se a informação não estiver na base acima, peça para o usuário validar com o administrador.
+    3. Use o link: [Ver documento completo: NOME](/processo/ID) ao citar manuais.
+    4. Proibido falar de "Rocha Alimentos".
+    5. Responda educadamente a saudações iniciais.
+    """
+
+    print(f"\n--- Iniciando consulta para: {pergunta} ---")
+
+    for model_name in model_list:
+        try:
+            print(f"Tentando modelo: {model_name}...")
+            model = genai.GenerativeModel(model_name=model_name, safety_settings=safety_settings)
+            response = model.generate_content(prompt_sistema + "\n\nPergunta: " + pergunta)
+            print(f"✅ Sucesso com {model_name}")
+            return response.text
+        except Exception as e:
+            print(f"❌ Erro no {model_name}: {str(e)[:100]}...")
+            continue 
+            
+    return ("⚠️ Erro de Conexão: A chave API é válida, mas o Google ainda está retornando erro 404 para os modelos solicitados. "
+            "Isso pode ser uma instabilidade regional ou necessidade de atualizar a biblioteca: 'pip install -U google-generativeai'.")
+
+# --- ROTAS ---
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -169,15 +207,13 @@ def login():
             session['user_name'] = user.full_name
             session['role'] = user.role
             return redirect(url_for('admin_panel' if user.role == 'admin' else 'index'))
-        flash("E-mail ou senha incorretos.")
+        flash("Credenciais inválidas.")
     return render_template('login.html')
 
 @app.route('/logout')
 def logout():
     session.clear()
     return redirect(url_for('login'))
-
-# --- ROTAS DE CONTEÚDO ---
 
 @app.route('/')
 @login_required
@@ -190,7 +226,6 @@ def index():
         docs_by_sector[d.sector].append(d)
     return render_template('index.html', user_name=session['user_name'], company_name=user.company.name, docs_by_sector=docs_by_sector, role=session.get('role'))
 
-# Rota para servir os arquivos físicos do servidor para o navegador
 @app.route('/documentos/<path:filename>')
 @login_required
 def servir_documento(filename):
@@ -201,29 +236,24 @@ def servir_documento(filename):
 def visualizar_processo(doc_id):
     doc = db.session.get(Document, doc_id)
     if not doc or doc.company_id != session['company_id']:
-        flash("Acesso negado.")
         return redirect(url_for('index'))
     return render_template('view_processo.html', doc=doc)
 
+@app.route('/ask', methods=['POST'])
+@login_required
+def ask_chatbot():
+    dados = request.json
+    pergunta = dados.get('question')
+    base = extrair_conteudo_documentos(session['company_id'])
+    user = db.session.get(User, session['user_id'])
+    resposta = obter_resposta_ia(pergunta, base, user.full_name, user.company.name)
+    return jsonify({"answer": resposta})
+
 @app.route('/contato')
 @login_required
-def contato_page():
-    return render_template('contato.html')
+def contato_page(): return render_template('contato.html')
 
-@app.route('/mvv')
-@login_required
-def mvv_page():
-    return render_template('mvv_historia.html')
-
-@app.route('/ferias')
-@login_required
-def ferias_page(): return render_template('artigo_ferias.html')
-
-@app.route('/beneficios')
-@login_required
-def beneficios_page(): return render_template('artigo_beneficios.html')
-
-# --- ROTAS ADMIN ---
+# --- ADMIN ---
 
 @app.route('/admin')
 @login_required
@@ -250,16 +280,9 @@ def add_user():
     email = request.form.get('email')
     password = request.form.get('password')
     role = request.form.get('role')
-    new_user = User(
-        company_id=session['company_id'], 
-        full_name=full_name, 
-        email=email, 
-        password_hash=generate_password_hash(password), 
-        role=role
-    )
+    new_user = User(company_id=session['company_id'], full_name=full_name, email=email, password_hash=generate_password_hash(password), role=role)
     db.session.add(new_user)
     db.session.commit()
-    flash(f"Utilizador {full_name} registado!")
     return redirect(url_for('admin_panel'))
 
 @app.route('/admin/delete_user/<int:user_id>')
@@ -270,7 +293,6 @@ def delete_user(user_id):
     if user and user.id != session['user_id']:
         db.session.delete(user)
         db.session.commit()
-        flash("Utilizador removido.")
     return redirect(url_for('admin_panel'))
 
 @app.route('/admin/upload_doc', methods=['POST'])
@@ -278,63 +300,35 @@ def delete_user(user_id):
 @admin_required
 def upload_doc():
     sector = request.form.get('sector')
-    if 'file' not in request.files or sector == "": 
-        flash("Selecione o ficheiro e o setor.")
-        return redirect(url_for('admin_processos'))
-    
+    if 'file' not in request.files or sector == "": return redirect(url_for('admin_processos'))
     file = request.files['file']
     if file and file.filename != '':
         filename = secure_filename(file.filename)
-        # Caminho físico: site/documentos/ID_EMPRESA/SETOR/ARQUIVO
         rel_dir = os.path.join(str(session['company_id']), sector)
         abs_dir = os.path.join(app.root_path, app.config['UPLOAD_FOLDER'], rel_dir)
-        
         if not os.path.exists(abs_dir): os.makedirs(abs_dir)
-        
-        filepath_abs = os.path.join(abs_dir, filename)
-        file.save(filepath_abs)
-        
-        # Caminho relativo para o banco (compatível com a rota de documentos)
+        file.save(os.path.join(abs_dir, filename))
         db_path = os.path.join(app.config['UPLOAD_FOLDER'], rel_dir, filename).replace('\\', '/')
-        
         new_doc = Document(company_id=session['company_id'], filename=filename, filepath=db_path, sector=sector)
         db.session.add(new_doc)
         db.session.commit()
-        flash(f"Documento '{filename}' armazenado com sucesso!")
     return redirect(url_for('admin_processos'))
 
 @app.route('/admin/delete_doc/<int:doc_id>')
 @login_required
 @admin_required
 def delete_doc(doc_id):
-    """Exclui o documento do banco e o arquivo físico do servidor."""
     doc = db.session.get(Document, doc_id)
     if doc and doc.company_id == session['company_id']:
-        try:
-            abs_path = os.path.join(app.root_path, doc.filepath)
-            if os.path.exists(abs_path):
-                os.remove(abs_path)
-        except Exception as e:
-            print(f"Erro ao remover arquivo físico: {e}")
-            
+        abs_path = os.path.join(app.root_path, doc.filepath)
+        if os.path.exists(abs_path): os.remove(abs_path)
         db.session.delete(doc)
         db.session.commit()
-        flash("Documento removido da nuvem Zortea.")
     return redirect(url_for('admin_processos'))
-
-@app.route('/ask', methods=['POST'])
-@login_required
-def ask_chatbot():
-    dados = request.json
-    pergunta = dados.get('question')
-    historico = dados.get('history', [])
-    base = extrair_conteudo_documentos(session['company_id'])
-    user = db.session.get(User, session['user_id'])
-    resposta = obter_resposta_ia(pergunta, base, historico, user.full_name, user.company.name)
-    return jsonify({"answer": resposta})
 
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()
         seed_data()
+        verificar_disponibilidade_ia() # Monitora a saúde da chave no terminal
     app.run(debug=True)
