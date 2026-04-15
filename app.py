@@ -108,14 +108,13 @@ def seed_data():
             db.session.add(new_adm)
     db.session.commit()
 
-# Movemos a criação das tabelas para fora do __main__
-# Assim o Gunicorn executa ao importar o app
+# Inicializa banco e dados base fora do __main__ para o Gunicorn
 with app.app_context():
     db.create_all()
     seed_data()
     print("🚀 Base de dados Zortea inicializada com sucesso!")
 
-# --- MOTOR DE IA E ROTAS (MANTIDOS) ---
+# --- MOTOR DE IA ---
 
 def extrair_conteudo_documentos(company_id):
     texto_consolidado = ""
@@ -150,6 +149,8 @@ def obter_resposta_ia(pergunta, base_conhecimento, user_name, company_name):
         except: continue
     return "Erro de quota na IA."
 
+# --- ROTAS DE AUTENTICAÇÃO ---
+
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
@@ -166,6 +167,8 @@ def login():
 def logout():
     session.clear()
     return redirect(url_for('login'))
+
+# --- ROTAS DO CHAT ---
 
 @app.route('/')
 @login_required
@@ -187,10 +190,10 @@ def ask_chatbot():
     resposta = obter_resposta_ia(dados.get('question'), base, user.full_name, user.company.name)
     return jsonify({"answer": resposta})
 
-# Rotas de Servir Ficheiros e Admin (Mantidas)
 @app.route('/documentos/<path:filename>')
 @login_required
-def servir_documento(filename): return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
+def servir_documento(filename): 
+    return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
 
 @app.route('/processo/<int:doc_id>')
 @login_required
@@ -198,6 +201,8 @@ def visualizar_processo(doc_id):
     doc = db.session.get(Document, doc_id)
     if not doc or doc.company_id != session['company_id']: return redirect(url_for('index'))
     return render_template('view_processo.html', doc=doc)
+
+# --- ROTAS ADMINISTRATIVAS (RESTAURADAS) ---
 
 @app.route('/admin')
 @login_required
@@ -216,6 +221,40 @@ def admin_processos():
     docs = Document.query.filter_by(company_id=company.id).all()
     return render_template('processos.html', company=company, setores=setores, documents=docs)
 
+@app.route('/admin/add_user', methods=['POST'])
+@login_required
+@admin_required
+def add_user():
+    full_name = request.form.get('full_name')
+    email = request.form.get('email')
+    password = request.form.get('password')
+    role = request.form.get('role')
+    job_title = request.form.get('job_title')
+    
+    new_user = User(
+        company_id=session['company_id'], 
+        full_name=full_name, 
+        email=email, 
+        password_hash=generate_password_hash(password), 
+        role=role,
+        job_title=job_title
+    )
+    db.session.add(new_user)
+    db.session.commit()
+    flash(f"Usuário {full_name} cadastrado!")
+    return redirect(url_for('admin_panel'))
+
+@app.route('/admin/delete_user/<int:user_id>')
+@login_required
+@admin_required
+def delete_user(user_id):
+    user = db.session.get(User, user_id)
+    if user and user.id != session['user_id']:
+        db.session.delete(user)
+        db.session.commit()
+        flash("Usuário removido.")
+    return redirect(url_for('admin_panel'))
+
 @app.route('/admin/upload_doc', methods=['POST'])
 @login_required
 @admin_required
@@ -231,6 +270,21 @@ def upload_doc():
         db_path = os.path.join(app.config['UPLOAD_FOLDER'], rel_dir, filename).replace('\\', '/')
         db.session.add(Document(company_id=session['company_id'], filename=filename, filepath=db_path, sector=sector))
         db.session.commit()
+        flash("Documento armazenado!")
+    return redirect(url_for('admin_processos'))
+
+@app.route('/admin/delete_doc/<int:doc_id>')
+@login_required
+@admin_required
+def delete_doc(doc_id):
+    doc = db.session.get(Document, doc_id)
+    if doc and doc.company_id == session['company_id']:
+        abs_path = os.path.join(app.root_path, doc.filepath)
+        if os.path.exists(abs_path):
+            os.remove(abs_path)
+        db.session.delete(doc)
+        db.session.commit()
+        flash("Documento removido.")
     return redirect(url_for('admin_processos'))
 
 if __name__ == '__main__':
