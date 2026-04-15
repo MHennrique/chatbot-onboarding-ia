@@ -8,11 +8,12 @@ from flask import Flask, request, jsonify, render_template, redirect, url_for, s
 from flask_cors import CORS
 from flask_sqlalchemy import SQLAlchemy
 
+
 from werkzeug.middleware.proxy_fix import ProxyFix
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
 
-# Dependências da Inteligência Artificial
+
 import google.generativeai as genai
 from google.generativeai.types import HarmCategory, HarmBlockThreshold
 from PyPDF2 import PdfReader
@@ -27,14 +28,14 @@ CORS(app)
 
 app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1)
 
-# Configurações de Sessão e Segurança
+# Configurações de Sessão Simplificadas para Produção
 app.secret_key = os.getenv("SECRET_KEY", "zortea_ia_solutions_key_2026")
-app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=7)
-app.config['SESSION_COOKIE_SECURE'] = True  # Obrigatório para HTTPS no Render
+app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=1)
+app.config['SESSION_COOKIE_SECURE'] = True  
 app.config['SESSION_COOKIE_HTTPONLY'] = True
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 
-# --- CORREÇÃO DE DIALETO POSTGRES ---
+# --- BANCO DE DADOS ---
 uri = os.getenv("DATABASE_URL")
 if uri and uri.startswith("postgres://"):
     uri = uri.replace("postgres://", "postgresql://", 1)
@@ -67,7 +68,6 @@ class User(db.Model):
     email = db.Column(db.String(100), unique=True, nullable=False)
     password_hash = db.Column(db.String(255), nullable=False)
     role = db.Column(db.String(20), default='user')
-    must_change_password = db.Column(db.Boolean, default=False)
     created_at = db.Column(db.DateTime, default=db.func.current_timestamp())
 
 class Document(db.Model):
@@ -84,7 +84,7 @@ class Document(db.Model):
 def login_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        if 'user_id' not in session: 
+        if 'user_id' not in session:
             return redirect(url_for('login'))
         return f(*args, **kwargs)
     return decorated_function
@@ -92,76 +92,36 @@ def login_required(f):
 def admin_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        if session.get('role') != 'admin': 
+        if session.get('role') != 'admin':
             return redirect(url_for('index'))
         return f(*args, **kwargs)
     return decorated_function
 
-# --- INICIALIZAÇÃO AUTOMÁTICA ---
+# --- INICIALIZAÇÃO ---
 
 def seed_data():
-    company_name = "Zortea IA Solutions"
-    company = Company.query.filter_by(name=company_name).first()
+    company = Company.query.first()
     if not company:
-        company = Company(name=company_name)
+        company = Company(name="Zortea IA Solutions")
         db.session.add(company)
         db.session.commit()
     
-    admins = [
-        {"name": "Marcos Henrique dos Santos Rosario", "email": "suporte@zorteaiasolutions.com.br"},
-        {"name": "Eschiley Raquel Rocha Zortea", "email": "eschiley@zorteaiasolutions.com.br"}
-    ]
-    for adm in admins:
-        user = User.query.filter_by(email=adm['email']).first()
-        if not user:
-            new_adm = User(
-                company_id=company.id,
-                full_name=adm['name'],
-                email=adm['email'],
-                password_hash=generate_password_hash("123"),
-                role="admin"
-            )
-            db.session.add(new_adm)
-    db.session.commit()
+    admin_email = "suporte@zorteaiasolutions.com.br"
+    user = User.query.filter_by(email=admin_email).first()
+    if not user:
+        new_adm = User(
+            company_id=company.id,
+            full_name="Suporte Zortea",
+            email=admin_email,
+            password_hash=generate_password_hash("123"),
+            role="admin"
+        )
+        db.session.add(new_adm)
+        db.session.commit()
 
 with app.app_context():
     db.create_all()
     seed_data()
-
-# --- MOTOR DE IA ---
-
-def extrair_conteudo_documentos(company_id):
-    texto_consolidado = ""
-    docs = Document.query.filter_by(company_id=company_id).all()
-    for doc in docs:
-        try:
-            abs_path = os.path.join(app.root_path, doc.filepath)
-            if not os.path.exists(abs_path): continue
-            content = ""
-            if doc.filename.lower().endswith('.pdf'):
-                reader = PdfReader(abs_path)
-                for page in reader.pages:
-                    text = page.extract_text()
-                    if text: content += text + "\n"
-            elif doc.filename.lower().endswith('.txt'):
-                with open(abs_path, 'r', encoding='utf-8') as f:
-                    content += f.read() + "\n"
-            if content:
-                texto_consolidado += f"\n[DOC ID: {doc.id} NOME: {doc.filename}]\n{content}\n"
-        except Exception: continue
-    return texto_consolidado
-
-def obter_resposta_ia(pergunta, base_conhecimento, user_name, company_name):
-    model_list = ['models/gemini-2.5-flash', 'models/gemini-1.5-flash']
-    safety_settings = {cat: HarmBlockThreshold.BLOCK_NONE for cat in [HarmCategory.HARM_CATEGORY_HARASSMENT, HarmCategory.HARM_CATEGORY_HATE_SPEECH, HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT, HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT]}
-    prompt_sistema = f"Você é o Guia Zortea da empresa {company_name}. Usuário: {user_name}. Responda apenas com base nisto: {base_conhecimento}"
-
-    for model_name in model_list:
-        try:
-            model = genai.GenerativeModel(model_name=model_name, safety_settings=safety_settings)
-            return model.generate_content(prompt_sistema + "\n\nPergunta: " + pergunta).text
-        except: continue
-    return "Erro de quota na IA."
 
 # --- ROTAS DE AUTENTICAÇÃO ---
 
@@ -174,14 +134,17 @@ def login():
         
         if user and check_password_hash(user.password_hash, pwd):
             session.clear()
-            session.permanent = True
             session['user_id'] = user.id
             session['company_id'] = user.company_id
-            session['user_name'] = user.full_name
             session['role'] = user.role
+            session.permanent = True
+            
+            # Se for admin, manda direto para o painel para testarmos o acesso
+            if user.role == 'admin':
+                return redirect(url_for('admin_panel'))
             return redirect(url_for('index'))
             
-        flash("E-mail ou senha incorretos.")
+        flash("Credenciais inválidas.")
     return render_template('login.html')
 
 @app.route('/logout')
@@ -189,65 +152,29 @@ def logout():
     session.clear()
     return redirect(url_for('login'))
 
-# --- ROTAS DO CHAT ---
+# --- ROTA PRINCIPAL (CHAVE DO PROBLEMA) ---
 
 @app.route('/')
 @login_required
 def index():
-    try:
-        user_id = session.get('user_id')
-        user = db.session.get(User, user_id)
-        
-        # Se o usuário não existir mais no banco mas estiver na sessão, limpa e desloga
-        if not user:
-            session.clear()
-            return redirect(url_for('login'))
-
-        company = db.session.get(Company, user.company_id)
-        docs = Document.query.filter_by(company_id=user.company_id).all()
-        
-        docs_by_sector = {}
-        for d in docs:
-            if d.sector not in docs_by_sector: 
-                docs_by_sector[d.sector] = []
-            docs_by_sector[d.sector].append(d)
-            
-        return render_template('index.html', 
-                               user_name=user.full_name, 
-                               company_name=company.name, 
-                               docs_by_sector=docs_by_sector, 
-                               role=user.role)
-    except Exception as e:
-        # Em caso de qualquer erro, não redireciona (para evitar loop), apenas mostra o erro ou desloga
+    user = db.session.get(User, session['user_id'])
+    if not user:
         session.clear()
         return redirect(url_for('login'))
-
-@app.route('/ask', methods=['POST'])
-@login_required
-def ask_chatbot():
-    try:
-        dados = request.json
-        company_id = session.get('company_id')
-        base = extrair_conteudo_documentos(company_id)
-        user_name = session.get('user_name')
-        company = db.session.get(Company, company_id)
-        resposta = obter_resposta_ia(dados.get('question'), base, user_name, company.name)
-        return jsonify({"answer": resposta})
-    except:
-        return jsonify({"answer": "Erro ao processar."})
-
-@app.route('/documentos/<path:filename>')
-@login_required
-def servir_documento(filename): 
-    return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
-
-@app.route('/processo/<int:doc_id>')
-@login_required
-def visualizar_processo(doc_id):
-    doc = db.session.get(Document, doc_id)
-    if not doc or doc.company_id != session.get('company_id'): 
-        return redirect(url_for('index'))
-    return render_template('view_processo.html', doc=doc)
+        
+    company = db.session.get(Company, user.company_id)
+    docs = Document.query.filter_by(company_id=user.company_id).all()
+    
+    docs_by_sector = {}
+    for d in docs:
+        if d.sector not in docs_by_sector: docs_by_sector[d.sector] = []
+        docs_by_sector[d.sector].append(d)
+        
+    return render_template('index.html', 
+                           user_name=user.full_name, 
+                           company_name=company.name, 
+                           docs_by_sector=docs_by_sector, 
+                           role=user.role)
 
 # --- ROTAS ADMINISTRATIVAS ---
 
@@ -272,21 +199,16 @@ def admin_processos():
 @login_required
 @admin_required
 def add_user():
-    full_name = request.form.get('full_name')
-    email = request.form.get('email')
-    password = request.form.get('password')
-    role = request.form.get('role')
-    job_title = request.form.get('job_title')
-    
     new_user = User(
-        company_id=session.get('company_id'), 
-        full_name=full_name, email=email, 
-        password_hash=generate_password_hash(password), 
-        role=role, job_title=job_title
+        company_id=session.get('company_id'),
+        full_name=request.form.get('full_name'),
+        email=request.form.get('email'),
+        password_hash=generate_password_hash(request.form.get('password')),
+        role=request.form.get('role'),
+        job_title=request.form.get('job_title')
     )
     db.session.add(new_user)
     db.session.commit()
-    flash(f"Usuário {full_name} cadastrado!")
     return redirect(url_for('admin_panel'))
 
 @app.route('/admin/delete_user/<int:user_id>')
@@ -327,6 +249,25 @@ def delete_doc(doc_id):
         db.session.delete(doc)
         db.session.commit()
     return redirect(url_for('admin_processos'))
+
+# --- OUTRAS ROTAS ---
+
+@app.route('/ask', methods=['POST'])
+@login_required
+def ask_chatbot():
+    return jsonify({"answer": "IA está temporariamente em manutenção para estabilização do login."})
+
+@app.route('/documentos/<path:filename>')
+@login_required
+def servir_documento(filename): 
+    return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
+
+@app.route('/processo/<int:doc_id>')
+@login_required
+def visualizar_processo(doc_id):
+    doc = db.session.get(Document, doc_id)
+    if not doc or doc.company_id != session.get('company_id'): return redirect(url_for('index'))
+    return render_template('view_processo.html', doc=doc)
 
 if __name__ == '__main__':
     app.run(debug=True)
