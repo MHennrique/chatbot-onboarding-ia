@@ -8,7 +8,7 @@ from flask import Flask, request, jsonify, render_template, redirect, url_for, s
 from flask_cors import CORS
 from flask_sqlalchemy import SQLAlchemy
 
-# Dependências de Segurança e Arquivos
+from werkzeug.middleware.proxy_fix import ProxyFix
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
 
@@ -25,14 +25,16 @@ genai.configure(api_key=api_key)
 app = Flask(__name__)
 CORS(app)
 
-# Configurações de Sessão e Segurança (CRÍTICO PARA RENDER)
+app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1)
+
+# Configurações de Sessão e Segurança
 app.secret_key = os.getenv("SECRET_KEY", "zortea_ia_solutions_key_2026")
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=7)
-app.config['SESSION_COOKIE_SECURE'] = True  # Garante que funciona em HTTPS
+app.config['SESSION_COOKIE_SECURE'] = True  # Obrigatório para HTTPS no Render
 app.config['SESSION_COOKIE_HTTPONLY'] = True
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 
-# --- CORREÇÃO DE DIALETO POSTGRES (CRÍTICO PARA RENDER) ---
+# --- CORREÇÃO DE DIALETO POSTGRES ---
 uri = os.getenv("DATABASE_URL")
 if uri and uri.startswith("postgres://"):
     uri = uri.replace("postgres://", "postgresql://", 1)
@@ -98,7 +100,6 @@ def admin_required(f):
 # --- INICIALIZAÇÃO AUTOMÁTICA ---
 
 def seed_data():
-    """Cria os dados base no primeiro arranque."""
     company_name = "Zortea IA Solutions"
     company = Company.query.filter_by(name=company_name).first()
     if not company:
@@ -123,11 +124,9 @@ def seed_data():
             db.session.add(new_adm)
     db.session.commit()
 
-# Inicializa banco e dados base fora do __main__ para o Gunicorn (Render)
 with app.app_context():
     db.create_all()
     seed_data()
-    print("🚀 Sistema Zortea inicializado com sucesso!")
 
 # --- MOTOR DE IA ---
 
@@ -168,16 +167,13 @@ def obter_resposta_ia(pergunta, base_conhecimento, user_name, company_name):
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
-    # Se já estiver logado, manda pro chat
-    if 'user_id' in session:
-        return redirect(url_for('index'))
-
     if request.method == 'POST':
         email = request.form.get('email').strip()
         pwd = request.form.get('password').strip()
         user = User.query.filter_by(email=email).first()
         
         if user and check_password_hash(user.password_hash, pwd):
+            session.clear()
             session.permanent = True
             session['user_id'] = user.id
             session['company_id'] = user.company_id
@@ -193,24 +189,23 @@ def logout():
     session.clear()
     return redirect(url_for('login'))
 
-# --- ROTAS DO CHAT (PRINCIPAL) ---
+# --- ROTAS DO CHAT ---
 
 @app.route('/')
 @login_required
 def index():
-    """ Rota do Chat. """
     try:
         user_id = session.get('user_id')
-        company_id = session.get('company_id')
-        
         user = db.session.get(User, user_id)
-        company = db.session.get(Company, company_id)
         
-        if not user or not company:
+        # Se o usuário não existir mais no banco mas estiver na sessão, limpa e desloga
+        if not user:
             session.clear()
             return redirect(url_for('login'))
 
-        docs = Document.query.filter_by(company_id=company_id).all()
+        company = db.session.get(Company, user.company_id)
+        docs = Document.query.filter_by(company_id=user.company_id).all()
+        
         docs_by_sector = {}
         for d in docs:
             if d.sector not in docs_by_sector: 
@@ -223,7 +218,8 @@ def index():
                                docs_by_sector=docs_by_sector, 
                                role=user.role)
     except Exception as e:
-        print(f"Erro na rota index: {e}")
+        # Em caso de qualquer erro, não redireciona (para evitar loop), apenas mostra o erro ou desloga
+        session.clear()
         return redirect(url_for('login'))
 
 @app.route('/ask', methods=['POST'])
@@ -231,16 +227,14 @@ def index():
 def ask_chatbot():
     try:
         dados = request.json
-        base = extrair_conteudo_documentos(session.get('company_id'))
+        company_id = session.get('company_id')
+        base = extrair_conteudo_documentos(company_id)
         user_name = session.get('user_name')
-        
-        company = db.session.get(Company, session.get('company_id'))
-        company_name = company.name if company else "Zortea IA"
-        
-        resposta = obter_resposta_ia(dados.get('question'), base, user_name, company_name)
+        company = db.session.get(Company, company_id)
+        resposta = obter_resposta_ia(dados.get('question'), base, user_name, company.name)
         return jsonify({"answer": resposta})
-    except Exception as e:
-        return jsonify({"answer": "Erro ao processar sua pergunta."})
+    except:
+        return jsonify({"answer": "Erro ao processar."})
 
 @app.route('/documentos/<path:filename>')
 @login_required
@@ -250,13 +244,10 @@ def servir_documento(filename):
 @app.route('/processo/<int:doc_id>')
 @login_required
 def visualizar_processo(doc_id):
-    try:
-        doc = db.session.get(Document, doc_id)
-        if not doc or doc.company_id != session.get('company_id'): 
-            return redirect(url_for('index'))
-        return render_template('view_processo.html', doc=doc)
-    except:
+    doc = db.session.get(Document, doc_id)
+    if not doc or doc.company_id != session.get('company_id'): 
         return redirect(url_for('index'))
+    return render_template('view_processo.html', doc=doc)
 
 # --- ROTAS ADMINISTRATIVAS ---
 
@@ -289,11 +280,9 @@ def add_user():
     
     new_user = User(
         company_id=session.get('company_id'), 
-        full_name=full_name, 
-        email=email, 
+        full_name=full_name, email=email, 
         password_hash=generate_password_hash(password), 
-        role=role,
-        job_title=job_title
+        role=role, job_title=job_title
     )
     db.session.add(new_user)
     db.session.commit()
@@ -308,7 +297,6 @@ def delete_user(user_id):
     if user and user.id != session.get('user_id'):
         db.session.delete(user)
         db.session.commit()
-        flash("Usuário removido.")
     return redirect(url_for('admin_panel'))
 
 @app.route('/admin/upload_doc', methods=['POST'])
@@ -326,7 +314,6 @@ def upload_doc():
         db_path = os.path.join(app.config['UPLOAD_FOLDER'], rel_dir, filename).replace('\\', '/')
         db.session.add(Document(company_id=session.get('company_id'), filename=filename, filepath=db_path, sector=sector))
         db.session.commit()
-        flash("Documento armazenado!")
     return redirect(url_for('admin_processos'))
 
 @app.route('/admin/delete_doc/<int:doc_id>')
@@ -334,13 +321,11 @@ def upload_doc():
 @admin_required
 def delete_doc(doc_id):
     doc = db.session.get(Document, doc_id)
-    if doc and doc.company_id == session.get('company_id'):
+    if doc and doc.company_id == session['company_id']:
         abs_path = os.path.join(app.root_path, doc.filepath)
-        if os.path.exists(abs_path):
-            os.remove(abs_path)
+        if os.path.exists(abs_path): os.remove(abs_path)
         db.session.delete(doc)
         db.session.commit()
-        flash("Documento removido.")
     return redirect(url_for('admin_processos'))
 
 if __name__ == '__main__':
