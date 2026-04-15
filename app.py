@@ -1,5 +1,6 @@
 import os
 from functools import wraps
+from datetime import timedelta
 from dotenv import load_dotenv
 
 # Dependências do Flask
@@ -23,7 +24,13 @@ genai.configure(api_key=api_key)
 
 app = Flask(__name__)
 CORS(app)
+
+# Configurações de Sessão e Segurança (CRÍTICO PARA RENDER)
 app.secret_key = os.getenv("SECRET_KEY", "zortea_ia_solutions_key_2026")
+app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=7)
+app.config['SESSION_COOKIE_SECURE'] = True  # Garante que funciona em HTTPS
+app.config['SESSION_COOKIE_HTTPONLY'] = True
+app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 
 # --- CORREÇÃO DE DIALETO POSTGRES (CRÍTICO PARA RENDER) ---
 uri = os.getenv("DATABASE_URL")
@@ -161,19 +168,23 @@ def obter_resposta_ia(pergunta, base_conhecimento, user_name, company_name):
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
+    # Se já estiver logado, manda pro chat
+    if 'user_id' in session:
+        return redirect(url_for('index'))
+
     if request.method == 'POST':
         email = request.form.get('email').strip()
         pwd = request.form.get('password').strip()
         user = User.query.filter_by(email=email).first()
+        
         if user and check_password_hash(user.password_hash, pwd):
-            # Limpa sessão anterior e define novos dados
-            session.clear()
+            session.permanent = True
             session['user_id'] = user.id
             session['company_id'] = user.company_id
             session['user_name'] = user.full_name
             session['role'] = user.role
-            session.permanent = True # Mantém o login ativo
             return redirect(url_for('index'))
+            
         flash("E-mail ou senha incorretos.")
     return render_template('login.html')
 
@@ -187,9 +198,8 @@ def logout():
 @app.route('/')
 @login_required
 def index():
-    """ Rota do Chat. Se não logado, o decorador envia para o login. """
+    """ Rota do Chat. """
     try:
-        # Busca explícita para evitar erros de relacionamento no Render
         user_id = session.get('user_id')
         company_id = session.get('company_id')
         
@@ -224,14 +234,13 @@ def ask_chatbot():
         base = extrair_conteudo_documentos(session.get('company_id'))
         user_name = session.get('user_name')
         
-        # Busca nome da empresa para o prompt
         company = db.session.get(Company, session.get('company_id'))
         company_name = company.name if company else "Zortea IA"
         
         resposta = obter_resposta_ia(dados.get('question'), base, user_name, company_name)
         return jsonify({"answer": resposta})
     except Exception as e:
-        return jsonify({"answer": "Erro ao processar sua pergunta. Tente novamente."})
+        return jsonify({"answer": "Erro ao processar sua pergunta."})
 
 @app.route('/documentos/<path:filename>')
 @login_required
