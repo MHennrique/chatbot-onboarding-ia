@@ -1,11 +1,17 @@
 import os
 from functools import wraps
 from dotenv import load_dotenv
+
+# Dependências do Flask
 from flask import Flask, request, jsonify, render_template, redirect, url_for, session, flash, send_from_directory
 from flask_cors import CORS
 from flask_sqlalchemy import SQLAlchemy
+
+# Dependências de Segurança e Arquivos
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
+
+# Dependências da Inteligência Artificial
 import google.generativeai as genai
 from google.generativeai.types import HarmCategory, HarmBlockThreshold
 from PyPDF2 import PdfReader
@@ -69,18 +75,20 @@ class Document(db.Model):
 def login_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        if 'user_id' not in session: return redirect(url_for('login'))
+        if 'user_id' not in session: 
+            return redirect(url_for('login'))
         return f(*args, **kwargs)
     return decorated_function
 
 def admin_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        if session.get('role') != 'admin': return redirect(url_for('index'))
+        if session.get('role') != 'admin': 
+            return redirect(url_for('index'))
         return f(*args, **kwargs)
     return decorated_function
 
-# --- INICIALIZAÇÃO AUTOMÁTICA (ESSENCIAL PARA GUNICORN/RENDER) ---
+# --- INICIALIZAÇÃO AUTOMÁTICA ---
 
 def seed_data():
     """Cria os dados base no primeiro arranque."""
@@ -108,11 +116,11 @@ def seed_data():
             db.session.add(new_adm)
     db.session.commit()
 
-# Inicializa banco e dados base fora do __main__ para o Gunicorn
+# Inicializa banco e dados base fora do __main__ para o Gunicorn (Render)
 with app.app_context():
     db.create_all()
     seed_data()
-    print("🚀 Base de dados Zortea inicializada com sucesso!")
+    print("🚀 Sistema Zortea inicializado com sucesso!")
 
 # --- MOTOR DE IA ---
 
@@ -158,9 +166,15 @@ def login():
         pwd = request.form.get('password').strip()
         user = User.query.filter_by(email=email).first()
         if user and check_password_hash(user.password_hash, pwd):
-            session.update({'user_id': user.id, 'company_id': user.company_id, 'user_name': user.full_name, 'role': user.role})
-            return redirect(url_for('admin_panel' if user.role == 'admin' else 'index'))
-        flash("Credenciais incorretas.")
+            # Limpa sessão anterior e define novos dados
+            session.clear()
+            session['user_id'] = user.id
+            session['company_id'] = user.company_id
+            session['user_name'] = user.full_name
+            session['role'] = user.role
+            session.permanent = True # Mantém o login ativo
+            return redirect(url_for('index'))
+        flash("E-mail ou senha incorretos.")
     return render_template('login.html')
 
 @app.route('/logout')
@@ -168,27 +182,56 @@ def logout():
     session.clear()
     return redirect(url_for('login'))
 
-# --- ROTAS DO CHAT ---
+# --- ROTAS DO CHAT (PRINCIPAL) ---
 
 @app.route('/')
 @login_required
 def index():
-    user = db.session.get(User, session['user_id'])
-    docs = Document.query.filter_by(company_id=session['company_id']).all()
-    docs_by_sector = {}
-    for d in docs:
-        if d.sector not in docs_by_sector: docs_by_sector[d.sector] = []
-        docs_by_sector[d.sector].append(d)
-    return render_template('index.html', user_name=session['user_name'], company_name=user.company.name, docs_by_sector=docs_by_sector, role=session.get('role'))
+    """ Rota do Chat. Se não logado, o decorador envia para o login. """
+    try:
+        # Busca explícita para evitar erros de relacionamento no Render
+        user_id = session.get('user_id')
+        company_id = session.get('company_id')
+        
+        user = db.session.get(User, user_id)
+        company = db.session.get(Company, company_id)
+        
+        if not user or not company:
+            session.clear()
+            return redirect(url_for('login'))
+
+        docs = Document.query.filter_by(company_id=company_id).all()
+        docs_by_sector = {}
+        for d in docs:
+            if d.sector not in docs_by_sector: 
+                docs_by_sector[d.sector] = []
+            docs_by_sector[d.sector].append(d)
+            
+        return render_template('index.html', 
+                               user_name=user.full_name, 
+                               company_name=company.name, 
+                               docs_by_sector=docs_by_sector, 
+                               role=user.role)
+    except Exception as e:
+        print(f"Erro na rota index: {e}")
+        return redirect(url_for('login'))
 
 @app.route('/ask', methods=['POST'])
 @login_required
 def ask_chatbot():
-    dados = request.json
-    base = extrair_conteudo_documentos(session['company_id'])
-    user = db.session.get(User, session['user_id'])
-    resposta = obter_resposta_ia(dados.get('question'), base, user.full_name, user.company.name)
-    return jsonify({"answer": resposta})
+    try:
+        dados = request.json
+        base = extrair_conteudo_documentos(session.get('company_id'))
+        user_name = session.get('user_name')
+        
+        # Busca nome da empresa para o prompt
+        company = db.session.get(Company, session.get('company_id'))
+        company_name = company.name if company else "Zortea IA"
+        
+        resposta = obter_resposta_ia(dados.get('question'), base, user_name, company_name)
+        return jsonify({"answer": resposta})
+    except Exception as e:
+        return jsonify({"answer": "Erro ao processar sua pergunta. Tente novamente."})
 
 @app.route('/documentos/<path:filename>')
 @login_required
@@ -198,17 +241,21 @@ def servir_documento(filename):
 @app.route('/processo/<int:doc_id>')
 @login_required
 def visualizar_processo(doc_id):
-    doc = db.session.get(Document, doc_id)
-    if not doc or doc.company_id != session['company_id']: return redirect(url_for('index'))
-    return render_template('view_processo.html', doc=doc)
+    try:
+        doc = db.session.get(Document, doc_id)
+        if not doc or doc.company_id != session.get('company_id'): 
+            return redirect(url_for('index'))
+        return render_template('view_processo.html', doc=doc)
+    except:
+        return redirect(url_for('index'))
 
-# --- ROTAS ADMINISTRATIVAS (RESTAURADAS) ---
+# --- ROTAS ADMINISTRATIVAS ---
 
 @app.route('/admin')
 @login_required
 @admin_required
 def admin_panel():
-    company = db.session.get(Company, session['company_id'])
+    company = db.session.get(Company, session.get('company_id'))
     users = User.query.filter_by(company_id=company.id).all()
     return render_template('admin.html', company=company, users=users)
 
@@ -216,7 +263,7 @@ def admin_panel():
 @login_required
 @admin_required
 def admin_processos():
-    company = db.session.get(Company, session['company_id'])
+    company = db.session.get(Company, session.get('company_id'))
     setores = ["Institucional", "Comercial", "Compras", "Diretoria", "Logística", "Limpeza", "Compliance"]
     docs = Document.query.filter_by(company_id=company.id).all()
     return render_template('processos.html', company=company, setores=setores, documents=docs)
@@ -232,7 +279,7 @@ def add_user():
     job_title = request.form.get('job_title')
     
     new_user = User(
-        company_id=session['company_id'], 
+        company_id=session.get('company_id'), 
         full_name=full_name, 
         email=email, 
         password_hash=generate_password_hash(password), 
@@ -249,7 +296,7 @@ def add_user():
 @admin_required
 def delete_user(user_id):
     user = db.session.get(User, user_id)
-    if user and user.id != session['user_id']:
+    if user and user.id != session.get('user_id'):
         db.session.delete(user)
         db.session.commit()
         flash("Usuário removido.")
@@ -263,12 +310,12 @@ def upload_doc():
     file = request.files.get('file')
     if file and sector:
         filename = secure_filename(file.filename)
-        rel_dir = os.path.join(str(session['company_id']), sector)
+        rel_dir = os.path.join(str(session.get('company_id')), sector)
         abs_dir = os.path.join(app.root_path, app.config['UPLOAD_FOLDER'], rel_dir)
         os.makedirs(abs_dir, exist_ok=True)
         file.save(os.path.join(abs_dir, filename))
         db_path = os.path.join(app.config['UPLOAD_FOLDER'], rel_dir, filename).replace('\\', '/')
-        db.session.add(Document(company_id=session['company_id'], filename=filename, filepath=db_path, sector=sector))
+        db.session.add(Document(company_id=session.get('company_id'), filename=filename, filepath=db_path, sector=sector))
         db.session.commit()
         flash("Documento armazenado!")
     return redirect(url_for('admin_processos'))
@@ -278,7 +325,7 @@ def upload_doc():
 @admin_required
 def delete_doc(doc_id):
     doc = db.session.get(Document, doc_id)
-    if doc and doc.company_id == session['company_id']:
+    if doc and doc.company_id == session.get('company_id'):
         abs_path = os.path.join(app.root_path, doc.filepath)
         if os.path.exists(abs_path):
             os.remove(abs_path)
