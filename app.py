@@ -132,8 +132,8 @@ with app.app_context():
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
-        email = request.form.get('email').strip()
-        pwd = request.form.get('password').strip()
+        email = request.form.get('email', '').strip()
+        pwd = request.form.get('password', '').strip()
         user = User.query.filter_by(email=email).first()
         
         if user and check_password_hash(user.password_hash, pwd):
@@ -183,7 +183,8 @@ def index():
 @app.route('/ask', methods=['POST'])
 @login_required
 def ask_chatbot():
-    return jsonify({"answer": "IA está temporariamente em manutenção para estabilização."})
+    # IA desativada temporariamente conforme pedido anterior para focar no Admin
+    return jsonify({"answer": "IA em manutenção. Focando na estabilização do painel admin."})
 
 # ==========================================
 # 6. ROTAS ADMINISTRATIVAS
@@ -200,36 +201,56 @@ def admin_panel():
 @login_required
 @admin_required
 def add_user():
-    new_user = User(
-        company_id=session.get('company_id'),
-        full_name=request.form.get('full_name'),
-        email=request.form.get('email'),
-        password_hash=generate_password_hash(request.form.get('password')),
-        role=request.form.get('role'),
-        job_title=request.form.get('job_title')
-    )
-    db.session.add(new_user)
-    db.session.commit()
-    flash("Usuário cadastrado com sucesso!")
+    try:
+        new_user = User(
+            company_id=session.get('company_id'),
+            full_name=request.form.get('full_name'),
+            email=request.form.get('email'),
+            password_hash=generate_password_hash(request.form.get('password')),
+            role=request.form.get('role'),
+            job_title=request.form.get('job_title')
+        )
+        db.session.add(new_user)
+        db.session.commit()
+        flash("Usuário cadastrado com sucesso!")
+    except Exception as e:
+        db.session.rollback()
+        flash(f"Erro ao cadastrar: {str(e)}")
     return redirect(url_for('admin_panel'))
 
 @app.route('/admin/edit_user/<int:user_id>', methods=['POST'])
 @login_required
 @admin_required
 def edit_user(user_id):
+    # DEBUG LOGS: Verifique o console do Render após tentar salvar
+    print(f"--- DEBUG: Tentando editar usuário ID {user_id} ---")
+    
     user = db.session.get(User, user_id)
-    if user:
+    if not user:
+        print(f"--- DEBUG: Usuário {user_id} não encontrado no banco ---")
+        flash("Usuário não encontrado.")
+        return redirect(url_for('admin_panel'))
+
+    try:
         user.full_name = request.form.get('full_name')
         user.email = request.form.get('email')
         user.job_title = request.form.get('job_title')
         user.role = request.form.get('role')
+        
+        print(f"--- DEBUG: Novos dados recebidos: {user.full_name}, {user.job_title} ---")
         
         nova_senha = request.form.get('password')
         if nova_senha and nova_senha.strip() != "":
             user.password_hash = generate_password_hash(nova_senha)
             
         db.session.commit()
+        print(f"--- DEBUG: Commit realizado com sucesso para ID {user_id} ---")
         flash(f"Usuário {user.full_name} atualizado com sucesso!")
+    except Exception as e:
+        db.session.rollback()
+        print(f"--- DEBUG ERRO: {str(e)} ---")
+        flash(f"Erro ao atualizar: {str(e)}")
+        
     return redirect(url_for('admin_panel'))
 
 @app.route('/admin/delete_user/<int:user_id>')
@@ -242,6 +263,17 @@ def delete_user(user_id):
         db.session.commit()
         flash("Usuário removido!")
     return redirect(url_for('admin_panel'))
+
+# ROTA DE DEBUG: Acesse seu-site.onrender.com/admin/check_db para ver os dados
+@app.route('/admin/check_db')
+@login_required
+@admin_required
+def check_db():
+    users = User.query.all()
+    output = "--- LISTA DE USUÁRIOS NO BANCO ---\n\n"
+    for u in users:
+        output += f"ID: {u.id} | Nome: {u.full_name} | Cargo: {u.job_title} | Email: {u.email} | Role: {u.role}\n"
+    return output, 200, {'Content-Type': 'text/plain; charset=utf-8'}
 
 # ==========================================
 # 7. GESTÃO DE DOCUMENTOS
