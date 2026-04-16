@@ -114,7 +114,7 @@ def seed_data():
     if not user:
         new_adm = User(
             company_id=company.id,
-            full_name="Suporte Zortea",
+            full_name="Marcos Henrique dos Santos Rosario",
             email=admin_email,
             password_hash=generate_password_hash("123"),
             role="admin"
@@ -140,6 +140,7 @@ def login():
             session.clear()
             session['user_id'] = user.id
             session['company_id'] = user.company_id
+            session['user_name'] = user.full_name
             session['role'] = user.role
             session.permanent = True
             
@@ -180,11 +181,51 @@ def index():
                            docs_by_sector=docs_by_sector, 
                            role=user.role)
 
+def extrair_conteudo_documentos(company_id):
+    texto_consolidado = ""
+    docs = Document.query.filter_by(company_id=company_id).all()
+    for doc in docs:
+        try:
+            abs_path = os.path.join(app.root_path, doc.filepath)
+            if not os.path.exists(abs_path): continue
+            content = ""
+            if doc.filename.lower().endswith('.pdf'):
+                reader = PdfReader(abs_path)
+                for page in reader.pages:
+                    text = page.extract_text()
+                    if text: content += text + "\n"
+            elif doc.filename.lower().endswith('.txt'):
+                with open(abs_path, 'r', encoding='utf-8') as f:
+                    content += f.read() + "\n"
+            if content:
+                texto_consolidado += f"\n[DOC ID: {doc.id} NOME: {doc.filename}]\n{content}\n"
+        except Exception: continue
+    return texto_consolidado
+
+def obter_resposta_ia(pergunta, base_conhecimento, user_name, company_name):
+    model_list = ['models/gemini-2.5-flash', 'models/gemini-1.5-flash']
+    safety_settings = {cat: HarmBlockThreshold.BLOCK_NONE for cat in [HarmCategory.HARM_CATEGORY_HARASSMENT, HarmCategory.HARM_CATEGORY_HATE_SPEECH, HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT, HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT]}
+    prompt_sistema = f"Você é o Guia Zortea da empresa {company_name}. Usuário: {user_name}. Responda apenas com base nisto: {base_conhecimento}"
+
+    for model_name in model_list:
+        try:
+            model = genai.GenerativeModel(model_name=model_name, safety_settings=safety_settings)
+            return model.generate_content(prompt_sistema + "\n\nPergunta: " + pergunta).text
+        except: continue
+    return "Erro de quota ou conexão na IA."
+
 @app.route('/ask', methods=['POST'])
 @login_required
 def ask_chatbot():
-    # IA desativada temporariamente conforme pedido anterior para focar no Admin
-    return jsonify({"answer": "IA em manutenção. Focando na estabilização do painel admin."})
+    try:
+        dados = request.json
+        base = extrair_conteudo_documentos(session.get('company_id'))
+        user_name = session.get('user_name')
+        company = db.session.get(Company, session.get('company_id'))
+        resposta = obter_resposta_ia(dados.get('question'), base, user_name, company.name)
+        return jsonify({"answer": resposta})
+    except Exception as e:
+        return jsonify({"answer": f"Erro técnico: {str(e)}"})
 
 # ==========================================
 # 6. ROTAS ADMINISTRATIVAS
@@ -222,34 +263,37 @@ def add_user():
 @login_required
 @admin_required
 def edit_user(user_id):
-    # DEBUG LOGS: Verifique o console do Render após tentar salvar
     print(f"--- DEBUG: Tentando editar usuário ID {user_id} ---")
     
     user = db.session.get(User, user_id)
     if not user:
-        print(f"--- DEBUG: Usuário {user_id} não encontrado no banco ---")
         flash("Usuário não encontrado.")
         return redirect(url_for('admin_panel'))
 
     try:
-        user.full_name = request.form.get('full_name')
-        user.email = request.form.get('email')
-        user.job_title = request.form.get('job_title')
-        user.role = request.form.get('role')
+        # Atualiza apenas se o campo não estiver vazio no formulário
+        nome = request.form.get('full_name')
+        if nome: user.full_name = nome
         
-        print(f"--- DEBUG: Novos dados recebidos: {user.full_name}, {user.job_title} ---")
+        email = request.form.get('email')
+        if email: user.email = email
+        
+        cargo = request.form.get('job_title')
+        if cargo is not None: user.job_title = cargo # Permite cargo vazio se enviado, mas não nulo no DB se for string
+        
+        nivel = request.form.get('role')
+        if nivel: user.role = nivel
         
         nova_senha = request.form.get('password')
         if nova_senha and nova_senha.strip() != "":
             user.password_hash = generate_password_hash(nova_senha)
             
         db.session.commit()
-        print(f"--- DEBUG: Commit realizado com sucesso para ID {user_id} ---")
-        flash(f"Usuário {user.full_name} atualizado com sucesso!")
+        flash(f"Usuário {user.full_name} atualizado!")
     except Exception as e:
         db.session.rollback()
         print(f"--- DEBUG ERRO: {str(e)} ---")
-        flash(f"Erro ao atualizar: {str(e)}")
+        flash(f"Erro ao atualizar: Verifique se o e-mail já existe ou se os campos estão corretos.")
         
     return redirect(url_for('admin_panel'))
 
@@ -264,7 +308,6 @@ def delete_user(user_id):
         flash("Usuário removido!")
     return redirect(url_for('admin_panel'))
 
-# ROTA DE DEBUG: Acesse seu-site.onrender.com/admin/check_db para ver os dados
 @app.route('/admin/check_db')
 @login_required
 @admin_required
