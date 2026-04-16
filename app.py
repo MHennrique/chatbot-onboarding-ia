@@ -28,7 +28,6 @@ genai.configure(api_key=api_key)
 app = Flask(__name__)
 CORS(app)
 
-# Correção de Proxy para Render (HTTPS)
 app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1)
 
 # Sessão e Cookies
@@ -49,7 +48,6 @@ app.config['SQLALCHEMY_DATABASE_URI'] = uri
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
-# Configuração Absoluta da Pasta de Documentos (Vital para o Render)
 app.config['UPLOAD_FOLDER'] = os.path.join(app.root_path, 'documentos')
 if not os.path.exists(app.config['UPLOAD_FOLDER']):
     os.makedirs(app.config['UPLOAD_FOLDER'])
@@ -343,7 +341,6 @@ def upload_doc():
 def delete_doc(doc_id):
     doc = db.session.get(Document, doc_id)
     if doc and doc.company_id == session.get('company_id'):
-        # Tenta remover o ficheiro físico
         try:
             rel_path = doc.filepath.split('documentos/', 1)[-1]
             abs_path = os.path.join(app.config['UPLOAD_FOLDER'], rel_path)
@@ -358,7 +355,7 @@ def delete_doc(doc_id):
 @app.route('/documentos/<path:filename>')
 @login_required
 def servir_documento(filename): 
-    # Log de diagnóstico para o terminal do Render
+    # Log de diagnóstico 
     print(f"--- DEBUG: Servindo arquivo {filename} de {app.config['UPLOAD_FOLDER']} ---")
     return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
 
