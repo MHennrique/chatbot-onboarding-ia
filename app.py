@@ -8,17 +8,19 @@ from flask import Flask, request, jsonify, render_template, redirect, url_for, s
 from flask_cors import CORS
 from flask_sqlalchemy import SQLAlchemy
 
-
+# Middleware e Segurança
 from werkzeug.middleware.proxy_fix import ProxyFix
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
 
-
+# Inteligência Artificial e PDFs
 import google.generativeai as genai
 from google.generativeai.types import HarmCategory, HarmBlockThreshold
 from PyPDF2 import PdfReader
 
-# --- CONFIGURAÇÕES ---
+# ==========================================
+# 1. CONFIGURAÇÕES E AMBIENTE
+# ==========================================
 load_dotenv()
 api_key = os.getenv("GOOGLE_API_KEY")
 genai.configure(api_key=api_key)
@@ -26,16 +28,19 @@ genai.configure(api_key=api_key)
 app = Flask(__name__)
 CORS(app)
 
+# Correção de Proxy para Render (HTTPS)
 app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1)
 
-# Configurações de Sessão Simplificadas para Produção
+# Sessão e Cookies
 app.secret_key = os.getenv("SECRET_KEY", "zortea_ia_solutions_key_2026")
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=1)
-app.config['SESSION_COOKIE_SECURE'] = True  
+app.config['SESSION_COOKIE_SECURE'] = True
 app.config['SESSION_COOKIE_HTTPONLY'] = True
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 
-# --- BANCO DE DADOS ---
+# ==========================================
+# 2. BANCO DE DADOS
+# ==========================================
 uri = os.getenv("DATABASE_URL")
 if uri and uri.startswith("postgres://"):
     uri = uri.replace("postgres://", "postgresql://", 1)
@@ -51,7 +56,6 @@ if not os.path.exists(UPLOAD_FOLDER):
     os.makedirs(UPLOAD_FOLDER)
 
 # --- MODELOS ---
-
 class Company(db.Model):
     __tablename__ = 'companies'
     id = db.Column(db.Integer, primary_key=True)
@@ -79,8 +83,9 @@ class Document(db.Model):
     sector = db.Column(db.String(100), nullable=False) 
     uploaded_at = db.Column(db.DateTime, default=db.func.current_timestamp())
 
-# --- DECORADORES ---
-
+# ==========================================
+# 3. DECORADORES E AUXILIARES
+# ==========================================
 def login_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
@@ -96,8 +101,6 @@ def admin_required(f):
             return redirect(url_for('index'))
         return f(*args, **kwargs)
     return decorated_function
-
-# --- INICIALIZAÇÃO ---
 
 def seed_data():
     company = Company.query.first()
@@ -123,8 +126,9 @@ with app.app_context():
     db.create_all()
     seed_data()
 
-# --- ROTAS DE AUTENTICAÇÃO ---
-
+# ==========================================
+# 4. ROTAS DE AUTENTICAÇÃO
+# ==========================================
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
@@ -139,7 +143,6 @@ def login():
             session['role'] = user.role
             session.permanent = True
             
-            # Se for admin, manda direto para o painel para testarmos o acesso
             if user.role == 'admin':
                 return redirect(url_for('admin_panel'))
             return redirect(url_for('index'))
@@ -152,8 +155,9 @@ def logout():
     session.clear()
     return redirect(url_for('login'))
 
-# --- ROTA PRINCIPAL (CHAVE DO PROBLEMA) ---
-
+# ==========================================
+# 5. ROTAS DO USUÁRIO (CHAT)
+# ==========================================
 @app.route('/')
 @login_required
 def index():
@@ -176,24 +180,21 @@ def index():
                            docs_by_sector=docs_by_sector, 
                            role=user.role)
 
-# --- ROTAS ADMINISTRATIVAS ---
+@app.route('/ask', methods=['POST'])
+@login_required
+def ask_chatbot():
+    return jsonify({"answer": "IA está temporariamente em manutenção para estabilização."})
 
+# ==========================================
+# 6. ROTAS ADMINISTRATIVAS
+# ==========================================
 @app.route('/admin')
 @login_required
 @admin_required
 def admin_panel():
     company = db.session.get(Company, session.get('company_id'))
-    users = User.query.filter_by(company_id=company.id).all()
+    users = User.query.filter_by(company_id=company.id).order_by(User.full_name).all()
     return render_template('admin.html', company=company, users=users)
-
-@app.route('/admin/processos')
-@login_required
-@admin_required
-def admin_processos():
-    company = db.session.get(Company, session.get('company_id'))
-    setores = ["Institucional", "Comercial", "Compras", "Diretoria", "Logística", "Limpeza", "Compliance"]
-    docs = Document.query.filter_by(company_id=company.id).all()
-    return render_template('processos.html', company=company, setores=setores, documents=docs)
 
 @app.route('/admin/add_user', methods=['POST'])
 @login_required
@@ -209,6 +210,26 @@ def add_user():
     )
     db.session.add(new_user)
     db.session.commit()
+    flash("Usuário cadastrado com sucesso!")
+    return redirect(url_for('admin_panel'))
+
+@app.route('/admin/edit_user/<int:user_id>', methods=['POST'])
+@login_required
+@admin_required
+def edit_user(user_id):
+    user = db.session.get(User, user_id)
+    if user:
+        user.full_name = request.form.get('full_name')
+        user.email = request.form.get('email')
+        user.job_title = request.form.get('job_title')
+        user.role = request.form.get('role')
+        
+        nova_senha = request.form.get('password')
+        if nova_senha and nova_senha.strip() != "":
+            user.password_hash = generate_password_hash(nova_senha)
+            
+        db.session.commit()
+        flash(f"Usuário {user.full_name} atualizado com sucesso!")
     return redirect(url_for('admin_panel'))
 
 @app.route('/admin/delete_user/<int:user_id>')
@@ -219,7 +240,20 @@ def delete_user(user_id):
     if user and user.id != session.get('user_id'):
         db.session.delete(user)
         db.session.commit()
+        flash("Usuário removido!")
     return redirect(url_for('admin_panel'))
+
+# ==========================================
+# 7. GESTÃO DE DOCUMENTOS
+# ==========================================
+@app.route('/admin/processos')
+@login_required
+@admin_required
+def admin_processos():
+    company = db.session.get(Company, session.get('company_id'))
+    setores = ["Institucional", "Comercial", "Compras", "Diretoria", "Logística", "Limpeza", "Compliance"]
+    docs = Document.query.filter_by(company_id=company.id).all()
+    return render_template('processos.html', company=company, setores=setores, documents=docs)
 
 @app.route('/admin/upload_doc', methods=['POST'])
 @login_required
@@ -249,13 +283,6 @@ def delete_doc(doc_id):
         db.session.delete(doc)
         db.session.commit()
     return redirect(url_for('admin_processos'))
-
-# --- OUTRAS ROTAS ---
-
-@app.route('/ask', methods=['POST'])
-@login_required
-def ask_chatbot():
-    return jsonify({"answer": "IA está temporariamente em manutenção para estabilização do login."})
 
 @app.route('/documentos/<path:filename>')
 @login_required
