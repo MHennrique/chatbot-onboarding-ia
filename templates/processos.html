@@ -68,6 +68,9 @@
         .sector-badge { background: #eef2ef; color: var(--primary); padding: 4px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: bold; }
         
         .flash-msg { padding: 15px; border-radius: 8px; margin-bottom: 20px; background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+
+        /* Estilos para o Filtro Dinâmico */
+        #indexed-section { display: none; margin-top: 50px; transition: 0.5s; }
     </style>
 </head>
 <body>
@@ -107,15 +110,14 @@
                         </div>
                         <div id="msg-unlock" style="display: none;">
                             <p style="color: var(--primary); font-weight: bold; font-size: 1.2rem;">Setor <span id="label-sector"></span> pronto!</p>
-                            <p>Clique abaixo para selecionar o arquivo PDF ou TXT.</p>
                             <input type="file" name="file" id="file-input" style="display: none;" onchange="submitForm()">
                             <button type="button" class="btn-upload" onclick="document.getElementById('file-input').click()">Selecionar Ficheiro</button>
                         </div>
                     </div>
                 </form>
 
-                <div style="margin-top: 50px;">
-                    <h3>Ficheiros Indexados</h3>
+                <div id="indexed-section">
+                    <h3>Ficheiros Indexados: <span id="current-filter" style="color: var(--primary);"></span></h3>
                     <table>
                         <thead>
                             <tr>
@@ -125,11 +127,10 @@
                                 <th style="text-align: right;">Ações</th>
                             </tr>
                         </thead>
-                        <tbody>
+                        <tbody id="files-table-body">
                             {% for doc in documents %}
-                            <tr>
+                            <tr class="file-row" data-sector="{{ doc.sector }}">
                                 <td>
-                                    <!-- Link que abre o visualizador dinâmico -->
                                     <a href="{{ url_for('visualizar_processo', doc_id=doc.id) }}" class="file-link" target="_blank">
                                         📄 {{ doc.filename }}
                                     </a>
@@ -137,21 +138,20 @@
                                 <td><span class="sector-badge">{{ doc.sector }}</span></td>
                                 <td style="color: #999; font-size: 0.85rem;">{{ doc.uploaded_at.strftime('%d/%m/%Y %H:%M') }}</td>
                                 <td style="text-align: right;">
-                                    <!-- Rota de exclusão para permitir substituir arquivos -->
                                     <a href="{{ url_for('delete_doc', doc_id=doc.id) }}" 
                                        class="btn-delete" 
-                                       onclick="return confirm('Deseja remover este processo da nuvem? Esta ação não pode ser desfeita.')">
+                                       onclick="return confirm('Deseja remover este processo?')">
                                         Excluir
                                     </a>
                                 </td>
                             </tr>
-                            {% else %}
-                            <tr>
+                            {% endfor %}
+                            <!-- Mensagem de fallback caso não existam arquivos para o setor -->
+                            <tr id="no-files-msg" style="display: none;">
                                 <td colspan="4" style="text-align: center; color: #999; padding: 30px;">
-                                    Nenhum documento encontrado na nuvem.
+                                    Nenhum documento encontrado para este setor.
                                 </td>
                             </tr>
-                            {% endfor %}
                         </tbody>
                     </table>
                 </div>
@@ -166,17 +166,47 @@
             const msgLock = document.getElementById('msg-lock');
             const msgUnlock = document.getElementById('msg-unlock');
             const label = document.getElementById('label-sector');
+            const indexedSection = document.getElementById('indexed-section');
+            const currentFilterLabel = document.getElementById('current-filter');
+            
+            const selectedSector = select.value;
 
-            if (select.value !== "") {
+            // Lógica para Área de Upload
+            if (selectedSector !== "") {
                 dropZone.classList.add('active');
                 msgLock.style.display = 'none';
                 msgUnlock.style.display = 'block';
-                label.innerText = select.value;
+                label.innerText = selectedSector;
+                
+                // Lógica de Filtro da Tabela
+                indexedSection.style.display = 'block';
+                currentFilterLabel.innerText = selectedSector;
+                filterTable(selectedSector);
+
             } else {
                 dropZone.classList.remove('active');
                 msgLock.style.display = 'block';
                 msgUnlock.style.display = 'none';
+                indexedSection.style.display = 'none';
             }
+        }
+
+        function filterTable(sector) {
+            const rows = document.querySelectorAll('.file-row');
+            const noFilesMsg = document.getElementById('no-files-msg');
+            let foundCount = 0;
+
+            rows.forEach(row => {
+                if (row.getAttribute('data-sector') === sector) {
+                    row.style.display = 'table-row';
+                    foundCount++;
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+
+            // Mostra mensagem amigável se o setor estiver vazio
+            noFilesMsg.style.display = foundCount === 0 ? 'table-row' : 'none';
         }
 
         function submitForm() {
