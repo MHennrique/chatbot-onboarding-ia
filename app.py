@@ -49,11 +49,10 @@ app.config['SQLALCHEMY_DATABASE_URI'] = uri
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
-# Pasta de documentos
-UPLOAD_FOLDER = 'documentos'
-app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
-if not os.path.exists(UPLOAD_FOLDER):
-    os.makedirs(UPLOAD_FOLDER)
+# Configuração Absoluta da Pasta de Documentos (Vital para o Render)
+app.config['UPLOAD_FOLDER'] = os.path.join(app.root_path, 'documentos')
+if not os.path.exists(app.config['UPLOAD_FOLDER']):
+    os.makedirs(app.config['UPLOAD_FOLDER'])
 
 # --- MODELOS ---
 class Company(db.Model):
@@ -186,7 +185,7 @@ def extrair_conteudo_documentos(company_id):
     docs = Document.query.filter_by(company_id=company_id).all()
     for doc in docs:
         try:
-            abs_path = os.path.join(app.root_path, doc.filepath)
+            abs_path = os.path.join(app.config['UPLOAD_FOLDER'], doc.filepath.split('documentos/', 1)[-1])
             if not os.path.exists(abs_path): continue
             content = ""
             if doc.filename.lower().endswith('.pdf'):
@@ -212,7 +211,7 @@ def obter_resposta_ia(pergunta, base_conhecimento, user_name, company_name):
             model = genai.GenerativeModel(model_name=model_name, safety_settings=safety_settings)
             return model.generate_content(prompt_sistema + "\n\nPergunta: " + pergunta).text
         except: continue
-    return "Erro de quota ou conexão na IA."
+    return "Erro de conexão na IA."
 
 @app.route('/ask', methods=['POST'])
 @login_required
@@ -263,23 +262,20 @@ def add_user():
 @login_required
 @admin_required
 def edit_user(user_id):
-    print(f"--- DEBUG: Tentando editar usuário ID {user_id} ---")
-    
     user = db.session.get(User, user_id)
     if not user:
         flash("Usuário não encontrado.")
         return redirect(url_for('admin_panel'))
 
     try:
-        # Atualiza apenas se o campo não estiver vazio no formulário
         nome = request.form.get('full_name')
-        if nome: user.full_name = nome
+        if nome and nome.strip() != "": user.full_name = nome
         
         email = request.form.get('email')
-        if email: user.email = email
+        if email and email.strip() != "": user.email = email
         
         cargo = request.form.get('job_title')
-        if cargo is not None: user.job_title = cargo # Permite cargo vazio se enviado, mas não nulo no DB se for string
+        if cargo is not None: user.job_title = cargo
         
         nivel = request.form.get('role')
         if nivel: user.role = nivel
@@ -292,8 +288,7 @@ def edit_user(user_id):
         flash(f"Usuário {user.full_name} atualizado!")
     except Exception as e:
         db.session.rollback()
-        print(f"--- DEBUG ERRO: {str(e)} ---")
-        flash(f"Erro ao atualizar: Verifique se o e-mail já existe ou se os campos estão corretos.")
+        flash("Erro ao atualizar dados do usuário.")
         
     return redirect(url_for('admin_panel'))
 
@@ -307,16 +302,6 @@ def delete_user(user_id):
         db.session.commit()
         flash("Usuário removido!")
     return redirect(url_for('admin_panel'))
-
-@app.route('/admin/check_db')
-@login_required
-@admin_required
-def check_db():
-    users = User.query.all()
-    output = "--- LISTA DE USUÁRIOS NO BANCO ---\n\n"
-    for u in users:
-        output += f"ID: {u.id} | Nome: {u.full_name} | Cargo: {u.job_title} | Email: {u.email} | Role: {u.role}\n"
-    return output, 200, {'Content-Type': 'text/plain; charset=utf-8'}
 
 # ==========================================
 # 7. GESTÃO DE DOCUMENTOS
@@ -339,12 +324,17 @@ def upload_doc():
     if file and sector:
         filename = secure_filename(file.filename)
         rel_dir = os.path.join(str(session.get('company_id')), sector)
-        abs_dir = os.path.join(app.root_path, app.config['UPLOAD_FOLDER'], rel_dir)
+        
+        # Cria caminho absoluto para salvar
+        abs_dir = os.path.join(app.config['UPLOAD_FOLDER'], rel_dir)
         os.makedirs(abs_dir, exist_ok=True)
         file.save(os.path.join(abs_dir, filename))
-        db_path = os.path.join(app.config['UPLOAD_FOLDER'], rel_dir, filename).replace('\\', '/')
+        
+        # Salva caminho relativo para a URL
+        db_path = f"documentos/{rel_dir}/{filename}".replace('\\', '/')
         db.session.add(Document(company_id=session.get('company_id'), filename=filename, filepath=db_path, sector=sector))
         db.session.commit()
+        flash("Documento enviado com sucesso!")
     return redirect(url_for('admin_processos'))
 
 @app.route('/admin/delete_doc/<int:doc_id>')
@@ -352,16 +342,24 @@ def upload_doc():
 @admin_required
 def delete_doc(doc_id):
     doc = db.session.get(Document, doc_id)
-    if doc and doc.company_id == session['company_id']:
-        abs_path = os.path.join(app.root_path, doc.filepath)
-        if os.path.exists(abs_path): os.remove(abs_path)
+    if doc and doc.company_id == session.get('company_id'):
+        # Tenta remover o ficheiro físico
+        try:
+            rel_path = doc.filepath.split('documentos/', 1)[-1]
+            abs_path = os.path.join(app.config['UPLOAD_FOLDER'], rel_path)
+            if os.path.exists(abs_path): os.remove(abs_path)
+        except: pass
+        
         db.session.delete(doc)
         db.session.commit()
+        flash("Documento excluído.")
     return redirect(url_for('admin_processos'))
 
 @app.route('/documentos/<path:filename>')
 @login_required
 def servir_documento(filename): 
+    # Log de diagnóstico para o terminal do Render
+    print(f"--- DEBUG: Servindo arquivo {filename} de {app.config['UPLOAD_FOLDER']} ---")
     return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
 
 @app.route('/processo/<int:doc_id>')
