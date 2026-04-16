@@ -117,7 +117,7 @@
 <div id="editModal" class="modal">
     <div class="modal-content">
         <h3>Editar Usuário</h3>
-            <form action="{{ url_for('edit_user', user_id=user.id) }}" method="POST">
+            <form id="editForm" method="POST">
             <div class="form-group"><label>Nome</label><input type="text" name="full_name" id="edit_name" required></div><br>
             <div class="form-group"><label>Cargo</label><input type="text" name="job_title" id="edit_job"></div><br>
             <div class="form-group">
