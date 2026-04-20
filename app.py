@@ -31,7 +31,7 @@ CORS(app)
 # Correção de Proxy para Render (HTTPS)
 app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1)
 
-# Sessão e Cookies
+# Sessão e Cookies (Configurações estáveis de produção)
 app.secret_key = os.getenv("SECRET_KEY", "zortea_ia_solutions_key_2026")
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=1)
 app.config['SESSION_COOKIE_SECURE'] = True
@@ -49,7 +49,7 @@ app.config['SQLALCHEMY_DATABASE_URI'] = uri
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
-# Pasta de documentos
+# Pasta de documentos com caminho absoluto
 app.config['UPLOAD_FOLDER'] = os.path.join(app.root_path, 'documentos')
 if not os.path.exists(app.config['UPLOAD_FOLDER']):
     os.makedirs(app.config['UPLOAD_FOLDER'])
@@ -114,12 +114,12 @@ def extrair_conteudo_documentos(company_id):
     docs = Document.query.filter_by(company_id=company_id).all()
     for doc in docs:
         try:
-            # Reconstrói o caminho baseado na pasta atual do servidor
-            rel_path = doc.filepath.split('documentos/', 1)[-1]
+            # Extrai o caminho relativo para montar o absoluto corretamente no servidor
+            path_parts = doc.filepath.split('documentos/')
+            rel_path = path_parts[-1] if len(path_parts) > 1 else doc.filepath
             abs_path = os.path.join(app.config['UPLOAD_FOLDER'], rel_path)
             
             if not os.path.exists(abs_path):
-                print(f"--- DEBUG IA: Arquivo {doc.filename} não encontrado fisicamente.")
                 continue
 
             content = ""
@@ -135,7 +135,7 @@ def extrair_conteudo_documentos(company_id):
             if content:
                 texto_consolidado += f"\n[DOC: {doc.filename} | ID: {doc.id}]\n{content}\n"
         except Exception as e:
-            print(f"--- DEBUG IA ERRO: {str(e)}")
+            print(f"--- DEBUG IA ERRO NO ARQUIVO {doc.filename}: {str(e)}")
             continue
     return texto_consolidado
 
@@ -161,7 +161,8 @@ def obter_resposta_ia(pergunta, base_conhecimento, user_name, company_name):
             model = genai.GenerativeModel(model_name=model_name, safety_settings=safety_settings)
             response = model.generate_content(prompt_sistema + "\n\nPergunta: " + pergunta)
             return response.text
-        except:
+        except Exception as e:
+            print(f"--- DEBUG IA: Falha no modelo {model_name}: {str(e)}")
             continue
     return "Desculpe, estou com dificuldades técnicas para acessar meu cérebro agora."
 
@@ -196,6 +197,7 @@ def logout():
 @app.route('/')
 @login_required
 def index():
+    print("--- DEBUG CHAT: Iniciando carregamento da rota principal ---")
     try:
         user_id = session.get('user_id')
         user = db.session.get(User, user_id)
@@ -212,6 +214,7 @@ def index():
         
         return render_template('index.html', user_name=user.full_name, company_name=company_name, docs_by_sector=docs_by_sector, role=user.role)
     except Exception as e:
+        print(f"--- DEBUG CHAT ERRO: {str(e)}")
         return redirect(url_for('logout'))
 
 # ==========================================
@@ -221,89 +224,178 @@ def index():
 @app.route('/ask', methods=['POST'])
 @login_required
 def ask_chatbot():
-    dados = request.json
-    pergunta = dados.get('question')
-    company_id = session.get('company_id')
-    user_name = session.get('user_name')
-    
-    # Busca a base de conhecimento real
-    base = extrair_conteudo_documentos(company_id)
-    
-    # Busca nome da empresa
-    company = db.session.get(Company, company_id)
-    company_name = company.name if company else "Zortea IA"
-    
-    resposta = obter_resposta_ia(pergunta, base, user_name, company_name)
-    return jsonify({"answer": resposta})
+    try:
+        dados = request.json
+        pergunta = dados.get('question')
+        company_id = session.get('company_id')
+        user_name = session.get('user_name')
+        
+        base = extrair_conteudo_documentos(company_id)
+        company = db.session.get(Company, company_id)
+        company_name = company.name if company else "Zortea IA"
+        
+        resposta = obter_resposta_ia(pergunta, base, user_name, company_name)
+        return jsonify({"answer": resposta})
+    except Exception as e:
+        return jsonify({"answer": "Ocorreu um erro ao processar sua pergunta."})
 
 @app.route('/documentos/<path:filename>')
 @login_required
 def servir_documento(filename): 
-    # DEBUG: Mostra no log o que ele está tentando abrir
+    # Log de diagnóstico para rastrear o acesso ao arquivo no Render
     abs_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-    print(f"--- DEBUG FILE: Tentando servir {filename}")
-    print(f"--- DEBUG FILE: Caminho absoluto: {abs_path}")
-    print(f"--- DEBUG FILE: Existe no disco? {os.path.exists(abs_path)}")
-    
+    print(f"--- DEBUG FILE: Acessando {filename} em {abs_path}")
     return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
 
 @app.route('/processo/<int:doc_id>')
 @login_required
 def visualizar_processo(doc_id):
-    doc = db.session.get(Document, doc_id)
-    if not doc or doc.company_id != session.get('company_id'): 
+    try:
+        doc = db.session.get(Document, doc_id)
+        if not doc or doc.company_id != session.get('company_id'): 
+            return redirect(url_for('index'))
+        return render_template('view_processo.html', doc=doc)
+    except Exception as e:
+        print(f"--- DEBUG VIEW PROCESSO ERRO: {str(e)}")
         return redirect(url_for('index'))
-    return render_template('view_processo.html', doc=doc)
 
 # ==========================================
-# 7. ROTAS ADMINISTRATIVAS
+# 7. ROTAS ADMINISTRATIVAS (REFORÇADAS)
 # ==========================================
 
 @app.route('/admin')
 @login_required
 @admin_required
 def admin_panel():
-    company = db.session.get(Company, session.get('company_id'))
-    users = User.query.filter_by(company_id=company.id).order_by(User.full_name).all()
-    return render_template('admin.html', company=company, users=users)
+    try:
+        company_id = session.get('company_id')
+        company = db.session.get(Company, company_id)
+        if not company:
+            flash("Empresa não localizada.")
+            return redirect(url_for('index'))
+            
+        users = User.query.filter_by(company_id=company.id).order_by(User.full_name).all()
+        return render_template('admin.html', company=company, users=users)
+    except Exception as e:
+        print(f"--- DEBUG ADMIN PANEL ERRO: {str(e)}")
+        return "Erro interno no painel administrativo.", 500
 
 @app.route('/admin/processos')
 @login_required
 @admin_required
 def admin_processos():
-    company = db.session.get(Company, session.get('company_id'))
-    setores = ["Institucional", "Comercial", "Compras", "Diretoria", "Logística", "Limpeza", "Compliance"]
-    docs = Document.query.filter_by(company_id=company.id).all()
-    return render_template('processos.html', company=company, setores=setores, documents=docs)
+    try:
+        company_id = session.get('company_id')
+        company = db.session.get(Company, company_id)
+        if not company:
+            flash("Erro ao carregar dados da empresa.")
+            return redirect(url_for('index'))
+
+        setores = ["Institucional", "Comercial", "Compras", "Diretoria", "Logística", "Limpeza", "Compliance"]
+        docs = Document.query.filter_by(company_id=company.id).all()
+        return render_template('processos.html', company=company, setores=setores, documents=docs)
+    except Exception as e:
+        print(f"--- DEBUG ADMIN PROCESSOS ERRO: {str(e)}")
+        return f"Erro ao carregar processos: {str(e)}", 500
+
+@app.route('/admin/add_user', methods=['POST'])
+@login_required
+@admin_required
+def add_user():
+    try:
+        new_user = User(
+            company_id=session.get('company_id'),
+            full_name=request.form.get('full_name'),
+            email=request.form.get('email'),
+            password_hash=generate_password_hash(request.form.get('password')),
+            role=request.form.get('role'),
+            job_title=request.form.get('job_title')
+        )
+        db.session.add(new_user)
+        db.session.commit()
+        return redirect(url_for('admin_panel'))
+    except Exception as e:
+        db.session.rollback()
+        return f"Erro ao adicionar usuário: {str(e)}", 500
+
+@app.route('/admin/edit_user/<int:user_id>', methods=['POST'])
+@login_required
+@admin_required
+def edit_user(user_id):
+    try:
+        user = db.session.get(User, user_id)
+        if user:
+            nome = request.form.get('full_name')
+            if nome: user.full_name = nome
+            email = request.form.get('email')
+            if email: user.email = email
+            cargo = request.form.get('job_title')
+            if cargo is not None: user.job_title = cargo
+            nivel = request.form.get('role')
+            if nivel: user.role = nivel
+            
+            nova_senha = request.form.get('password')
+            if nova_senha and nova_senha.strip() != "":
+                user.password_hash = generate_password_hash(nova_senha)
+            
+            db.session.commit()
+        return redirect(url_for('admin_panel'))
+    except Exception as e:
+        db.session.rollback()
+        return f"Erro ao editar usuário: {str(e)}", 500
 
 @app.route('/admin/upload_doc', methods=['POST'])
 @login_required
 @admin_required
 def upload_doc():
-    sector = request.form.get('sector')
-    file = request.files.get('file')
-    if file and sector:
-        filename = secure_filename(file.filename)
-        rel_dir = os.path.join(str(session.get('company_id')), sector)
-        abs_dir = os.path.join(app.config['UPLOAD_FOLDER'], rel_dir)
-        os.makedirs(abs_dir, exist_ok=True)
-        file.save(os.path.join(abs_dir, filename))
-        
-        # Caminho relativo padrão
-        db_path = f"documentos/{rel_dir}/{filename}".replace('\\', '/')
-        db.session.add(Document(company_id=session.get('company_id'), filename=filename, filepath=db_path, sector=sector))
-        db.session.commit()
-    return redirect(url_for('admin_processos'))
+    try:
+        sector = request.form.get('sector')
+        file = request.files.get('file')
+        company_id = session.get('company_id')
+
+        if file and sector and company_id:
+            filename = secure_filename(file.filename)
+            rel_dir = os.path.join(str(company_id), sector)
+            abs_dir = os.path.join(app.config['UPLOAD_FOLDER'], rel_dir)
+            
+            os.makedirs(abs_dir, exist_ok=True)
+            file.save(os.path.join(abs_dir, filename))
+            
+            # Caminho salvo para ser compatível com a rota /documentos/
+            db_path = f"documentos/{rel_dir}/{filename}".replace('\\', '/')
+            
+            db.session.add(Document(company_id=company_id, filename=filename, filepath=db_path, sector=sector))
+            db.session.commit()
+            flash("Documento enviado com sucesso!")
+        return redirect(url_for('admin_processos'))
+    except Exception as e:
+        db.session.rollback()
+        print(f"--- DEBUG UPLOAD ERRO: {str(e)}")
+        return f"Erro no upload: {str(e)}", 500
 
 @app.route('/admin/delete_doc/<int:doc_id>')
 @login_required
 @admin_required
 def delete_doc(doc_id):
-    doc = db.session.get(Document, doc_id)
-    if doc and doc.company_id == session.get('company_id'):
-        db.session.delete(doc)
-        db.session.commit()
-    return redirect(url_for('admin_processos'))
+    try:
+        doc = db.session.get(Document, doc_id)
+        if doc and doc.company_id == session.get('company_id'):
+            # Tenta apagar o arquivo físico se existir
+            try:
+                path_parts = doc.filepath.split('documentos/')
+                rel_path = path_parts[-1] if len(path_parts) > 1 else doc.filepath
+                abs_path = os.path.join(app.config['UPLOAD_FOLDER'], rel_path)
+                if os.path.exists(abs_path):
+                    os.remove(abs_path)
+            except:
+                pass
+            
+            db.session.delete(doc)
+            db.session.commit()
+        return redirect(url_for('admin_processos'))
+    except Exception as e:
+        db.session.rollback()
+        return f"Erro ao deletar: {str(e)}", 500
 
 @app.route('/contato')
 @login_required
