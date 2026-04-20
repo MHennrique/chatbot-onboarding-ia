@@ -344,6 +344,23 @@ def edit_user(user_id):
         db.session.rollback()
         return f"Erro ao editar usuário: {str(e)}", 500
 
+@app.route('/admin/delete_user/<int:user_id>')
+@login_required
+@admin_required
+def delete_user(user_id):
+    try:
+        user = db.session.get(User, user_id)
+        # Proteção para não excluir a si mesmo
+        if user and user.id != session.get('user_id'):
+            db.session.delete(user)
+            db.session.commit()
+            flash("Usuário removido com sucesso.")
+        return redirect(url_for('admin_panel'))
+    except Exception as e:
+        db.session.rollback()
+        print(f"--- DEBUG DELETE USER ERRO: {str(e)}")
+        return f"Erro ao excluir usuário: {str(e)}", 500
+
 @app.route('/admin/upload_doc', methods=['POST'])
 @login_required
 @admin_required
@@ -364,7 +381,8 @@ def upload_doc():
             # Caminho salvo para ser compatível com a rota /documentos/
             db_path = f"documentos/{rel_dir}/{filename}".replace('\\', '/')
             
-            db.session.add(Document(company_id=company_id, filename=filename, filepath=db_path, sector=sector))
+            db_path_absolute = Document(company_id=company_id, filename=filename, filepath=db_path, sector=sector)
+            db.session.add(db_path_absolute)
             db.session.commit()
             flash("Documento enviado com sucesso!")
         return redirect(url_for('admin_processos'))
