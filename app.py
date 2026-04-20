@@ -28,8 +28,10 @@ genai.configure(api_key=api_key)
 app = Flask(__name__)
 CORS(app)
 
+# Correção de Proxy para Render (HTTPS)
 app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1)
 
+# Sessão e Cookies
 app.secret_key = os.getenv("SECRET_KEY", "zortea_ia_solutions_key_2026")
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=1)
 app.config['SESSION_COOKIE_SECURE'] = True
@@ -47,6 +49,7 @@ app.config['SQLALCHEMY_DATABASE_URI'] = uri
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
+# Pasta de documentos
 app.config['UPLOAD_FOLDER'] = os.path.join(app.root_path, 'documentos')
 if not os.path.exists(app.config['UPLOAD_FOLDER']):
     os.makedirs(app.config['UPLOAD_FOLDER'])
@@ -80,7 +83,7 @@ class Document(db.Model):
     uploaded_at = db.Column(db.DateTime, default=db.func.current_timestamp())
 
 # ==========================================
-# 3. DECORADORES
+# 3. DECORADORES E AUXILIARES
 # ==========================================
 def login_required(f):
     @wraps(f)
@@ -102,8 +105,70 @@ with app.app_context():
     db.create_all()
 
 # ==========================================
-# 4. ROTAS DE AUTENTICAÇÃO
+# 4. MOTOR DE INTELIGÊNCIA ARTIFICIAL (RAG)
 # ==========================================
+
+def extrair_conteudo_documentos(company_id):
+    """Lê o texto dos arquivos físicos para a IA."""
+    texto_consolidado = ""
+    docs = Document.query.filter_by(company_id=company_id).all()
+    for doc in docs:
+        try:
+            # Reconstrói o caminho baseado na pasta atual do servidor
+            rel_path = doc.filepath.split('documentos/', 1)[-1]
+            abs_path = os.path.join(app.config['UPLOAD_FOLDER'], rel_path)
+            
+            if not os.path.exists(abs_path):
+                print(f"--- DEBUG IA: Arquivo {doc.filename} não encontrado fisicamente.")
+                continue
+
+            content = ""
+            if doc.filename.lower().endswith('.pdf'):
+                reader = PdfReader(abs_path)
+                for page in reader.pages:
+                    text = page.extract_text()
+                    if text: content += text + "\n"
+            elif doc.filename.lower().endswith('.txt'):
+                with open(abs_path, 'r', encoding='utf-8') as f:
+                    content += f.read() + "\n"
+            
+            if content:
+                texto_consolidado += f"\n[DOC: {doc.filename} | ID: {doc.id}]\n{content}\n"
+        except Exception as e:
+            print(f"--- DEBUG IA ERRO: {str(e)}")
+            continue
+    return texto_consolidado
+
+def obter_resposta_ia(pergunta, base_conhecimento, user_name, company_name):
+    """Chama o Gemini com o contexto dos documentos."""
+    model_list = ['models/gemini-2.5-flash', 'models/gemini-1.5-flash']
+    safety_settings = {cat: HarmBlockThreshold.BLOCK_NONE for cat in [
+        HarmCategory.HARM_CATEGORY_HARASSMENT, 
+        HarmCategory.HARM_CATEGORY_HATE_SPEECH, 
+        HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT, 
+        HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT
+    ]}
+    
+    prompt_sistema = f"""
+    Identidade: Guia Zortea IA Solutions da empresa {company_name}.
+    Usuário: {user_name}.
+    Instrução: Use os documentos abaixo para responder. Se não souber, diga que não encontrou nos manuais.
+    Documentos: {base_conhecimento}
+    """
+
+    for model_name in model_list:
+        try:
+            model = genai.GenerativeModel(model_name=model_name, safety_settings=safety_settings)
+            response = model.generate_content(prompt_sistema + "\n\nPergunta: " + pergunta)
+            return response.text
+        except:
+            continue
+    return "Desculpe, estou com dificuldades técnicas para acessar meu cérebro agora."
+
+# ==========================================
+# 5. ROTAS DE NAVEGAÇÃO E AUTENTICAÇÃO
+# ==========================================
+
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
@@ -118,7 +183,6 @@ def login():
             session['user_name'] = user.full_name
             session['role'] = user.role
             session.permanent = True
-            
             return redirect(url_for('admin_panel' if user.role == 'admin' else 'index'))
             
         flash("Credenciais inválidas.")
@@ -129,32 +193,16 @@ def logout():
     session.clear()
     return redirect(url_for('login'))
 
-# ==========================================
-# 5. ROTA DO CHAT (ALVO DO DEBUG)
-# ==========================================
 @app.route('/')
 @login_required
 def index():
-    print("--- DEBUG CHAT: Iniciando carregamento da rota principal ---")
     try:
         user_id = session.get('user_id')
-        print(f"--- DEBUG CHAT: Session User ID: {user_id}")
-
         user = db.session.get(User, user_id)
-        if not user:
-            print("--- DEBUG CHAT: Usuário não encontrado no DB ---")
-            return redirect(url_for('logout'))
-
-        print(f"--- DEBUG CHAT: Usuário localizado: {user.full_name}")
+        if not user: return redirect(url_for('logout'))
 
         company = db.session.get(Company, user.company_id)
-        if not company:
-            print("--- DEBUG CHAT: Empresa não encontrada para este usuário ---")
-            company_name = "Zortea IA"
-        else:
-            company_name = company.name
-
-        print(f"--- DEBUG CHAT: Empresa: {company_name}")
+        company_name = company.name if company else "Zortea IA"
 
         docs = Document.query.filter_by(company_id=user.company_id).all()
         docs_by_sector = {}
@@ -162,31 +210,54 @@ def index():
             if d.sector not in docs_by_sector: docs_by_sector[d.sector] = []
             docs_by_sector[d.sector].append(d)
         
-        print(f"--- DEBUG CHAT: Documentos carregados: {len(docs)}")
-
-        return render_template('index.html', 
-                               user_name=user.full_name, 
-                               company_name=company_name, 
-                               docs_by_sector=docs_by_sector, 
-                               role=user.role)
-
+        return render_template('index.html', user_name=user.full_name, company_name=company_name, docs_by_sector=docs_by_sector, role=user.role)
     except Exception as e:
-        print(f"--- DEBUG CHAT ERRO CRÍTICO: {str(e)} ---")
-        return f"Erro interno no Chat. Verifique os logs do Render. Detalhe: {str(e)}", 500
+        return redirect(url_for('logout'))
 
 # ==========================================
-# 6. ROTAS ADMIN E IA
+# 6. OPERAÇÕES DE CHAT E DOCUMENTOS
 # ==========================================
 
 @app.route('/ask', methods=['POST'])
 @login_required
 def ask_chatbot():
-    return jsonify({"answer": "Conexão com Chat estabelecida. IA pronta para testes."})
+    dados = request.json
+    pergunta = dados.get('question')
+    company_id = session.get('company_id')
+    user_name = session.get('user_name')
+    
+    # Busca a base de conhecimento real
+    base = extrair_conteudo_documentos(company_id)
+    
+    # Busca nome da empresa
+    company = db.session.get(Company, company_id)
+    company_name = company.name if company else "Zortea IA"
+    
+    resposta = obter_resposta_ia(pergunta, base, user_name, company_name)
+    return jsonify({"answer": resposta})
 
-@app.route('/contato')
+@app.route('/documentos/<path:filename>')
 @login_required
-def contato_page():
-    return render_template('contato.html')
+def servir_documento(filename): 
+    # DEBUG: Mostra no log o que ele está tentando abrir
+    abs_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+    print(f"--- DEBUG FILE: Tentando servir {filename}")
+    print(f"--- DEBUG FILE: Caminho absoluto: {abs_path}")
+    print(f"--- DEBUG FILE: Existe no disco? {os.path.exists(abs_path)}")
+    
+    return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
+
+@app.route('/processo/<int:doc_id>')
+@login_required
+def visualizar_processo(doc_id):
+    doc = db.session.get(Document, doc_id)
+    if not doc or doc.company_id != session.get('company_id'): 
+        return redirect(url_for('index'))
+    return render_template('view_processo.html', doc=doc)
+
+# ==========================================
+# 7. ROTAS ADMINISTRATIVAS
+# ==========================================
 
 @app.route('/admin')
 @login_required
@@ -195,52 +266,6 @@ def admin_panel():
     company = db.session.get(Company, session.get('company_id'))
     users = User.query.filter_by(company_id=company.id).order_by(User.full_name).all()
     return render_template('admin.html', company=company, users=users)
-
-@app.route('/admin/add_user', methods=['POST'])
-@login_required
-@admin_required
-def add_user():
-    new_user = User(
-        company_id=session.get('company_id'),
-        full_name=request.form.get('full_name'),
-        email=request.form.get('email'),
-        password_hash=generate_password_hash(request.form.get('password')),
-        role=request.form.get('role'),
-        job_title=request.form.get('job_title')
-    )
-    db.session.add(new_user)
-    db.session.commit()
-    return redirect(url_for('admin_panel'))
-
-@app.route('/admin/edit_user/<int:user_id>', methods=['POST'])
-@login_required
-@admin_required
-def edit_user(user_id):
-    user = db.session.get(User, user_id)
-    if user:
-        nome = request.form.get('full_name')
-        if nome: user.full_name = nome
-        email = request.form.get('email')
-        if email: user.email = email
-        cargo = request.form.get('job_title')
-        if cargo is not None: user.job_title = cargo
-        nivel = request.form.get('role')
-        if nivel: user.role = nivel
-        nova_senha = request.form.get('password')
-        if nova_senha and nova_senha.strip() != "":
-            user.password_hash = generate_password_hash(nova_senha)
-        db.session.commit()
-    return redirect(url_for('admin_panel'))
-
-@app.route('/admin/delete_user/<int:user_id>')
-@login_required
-@admin_required
-def delete_user(user_id):
-    user = db.session.get(User, user_id)
-    if user and user.id != session.get('user_id'):
-        db.session.delete(user)
-        db.session.commit()
-    return redirect(url_for('admin_panel'))
 
 @app.route('/admin/processos')
 @login_required
@@ -263,6 +288,8 @@ def upload_doc():
         abs_dir = os.path.join(app.config['UPLOAD_FOLDER'], rel_dir)
         os.makedirs(abs_dir, exist_ok=True)
         file.save(os.path.join(abs_dir, filename))
+        
+        # Caminho relativo padrão
         db_path = f"documentos/{rel_dir}/{filename}".replace('\\', '/')
         db.session.add(Document(company_id=session.get('company_id'), filename=filename, filepath=db_path, sector=sector))
         db.session.commit()
@@ -274,26 +301,14 @@ def upload_doc():
 def delete_doc(doc_id):
     doc = db.session.get(Document, doc_id)
     if doc and doc.company_id == session.get('company_id'):
-        try:
-            rel_path = doc.filepath.split('documentos/', 1)[-1]
-            abs_path = os.path.join(app.config['UPLOAD_FOLDER'], rel_path)
-            if os.path.exists(abs_path): os.remove(abs_path)
-        except: pass
         db.session.delete(doc)
         db.session.commit()
     return redirect(url_for('admin_processos'))
 
-@app.route('/documentos/<path:filename>')
+@app.route('/contato')
 @login_required
-def servir_documento(filename): 
-    return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
-
-@app.route('/processo/<int:doc_id>')
-@login_required
-def visualizar_processo(doc_id):
-    doc = db.session.get(Document, doc_id)
-    if not doc or doc.company_id != session.get('company_id'): return redirect(url_for('index'))
-    return render_template('view_processo.html', doc=doc)
+def contato_page():
+    return render_template('contato.html')
 
 if __name__ == '__main__':
     app.run(debug=True)
