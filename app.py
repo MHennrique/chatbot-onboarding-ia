@@ -164,7 +164,6 @@ def index():
         
         print(f"--- DEBUG CHAT: Documentos carregados: {len(docs)}")
 
-        # Verifique se o seu index.html usa EXATAMENTE esses nomes de variáveis
         return render_template('index.html', 
                                user_name=user.full_name, 
                                company_name=company_name, 
@@ -176,14 +175,18 @@ def index():
         return f"Erro interno no Chat. Verifique os logs do Render. Detalhe: {str(e)}", 500
 
 # ==========================================
-# 6. ROTAS ADMIN E IA (MANTIDAS)
+# 6. ROTAS ADMIN E IA
 # ==========================================
 
 @app.route('/ask', methods=['POST'])
 @login_required
 def ask_chatbot():
-    # Simplificado para teste de interface
     return jsonify({"answer": "Conexão com Chat estabelecida. IA pronta para testes."})
+
+@app.route('/contato')
+@login_required
+def contato_page():
+    return render_template('contato.html')
 
 @app.route('/admin')
 @login_required
