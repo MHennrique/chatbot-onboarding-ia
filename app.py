@@ -1,10 +1,11 @@
 import os
+import io
 from functools import wraps
 from datetime import timedelta
 from dotenv import load_dotenv
 
 # Dependências do Flask
-from flask import Flask, request, jsonify, render_template, redirect, url_for, session, flash, send_from_directory
+from flask import Flask, request, jsonify, render_template, redirect, url_for, session, flash, send_from_directory, send_file
 from flask_cors import CORS
 from flask_sqlalchemy import SQLAlchemy
 
@@ -49,7 +50,7 @@ app.config['SQLALCHEMY_DATABASE_URI'] = uri
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
-# Pasta de documentos com caminho absoluto
+# Pasta temporária para uploads locais (usada como redundância)
 app.config['UPLOAD_FOLDER'] = os.path.join(app.root_path, 'documentos')
 if not os.path.exists(app.config['UPLOAD_FOLDER']):
     os.makedirs(app.config['UPLOAD_FOLDER'])
@@ -81,6 +82,8 @@ class Document(db.Model):
     filepath = db.Column(db.String(500), nullable=False)
     sector = db.Column(db.String(100), nullable=False) 
     uploaded_at = db.Column(db.DateTime, default=db.func.current_timestamp())
+    # NOVA COLUNA: Armazena o conteúdo binário do PDF direto no PostgreSQL
+    file_data = db.Column(db.LargeBinary, nullable=True) 
 
 # ==========================================
 # 3. DECORADORES E AUXILIARES
@@ -105,32 +108,42 @@ with app.app_context():
     db.create_all()
 
 # ==========================================
-# 4. MOTOR DE INTELIGÊNCIA ARTIFICIAL (RAG)
+# 4. MOTOR DE INTELIGÊNCIA ARTIFICIAL (RAG COM ARMAZENAMENTO EM BANCO)
 # ==========================================
 
 def extrair_conteudo_documentos(company_id):
-    """Lê o texto dos arquivos físicos para a IA."""
+    """Lê o texto dos PDFs direto do banco de dados (imune a reinicializações)."""
     texto_consolidado = ""
     docs = Document.query.filter_by(company_id=company_id).all()
     for doc in docs:
         try:
-            # Extrai o caminho relativo para montar o absoluto corretamente no servidor
-            path_parts = doc.filepath.split('documentos/')
-            rel_path = path_parts[-1] if len(path_parts) > 1 else doc.filepath
-            abs_path = os.path.join(app.config['UPLOAD_FOLDER'], rel_path)
-            
-            if not os.path.exists(abs_path):
-                continue
-
             content = ""
-            if doc.filename.lower().endswith('.pdf'):
-                reader = PdfReader(abs_path)
-                for page in reader.pages:
-                    text = page.extract_text()
-                    if text: content += text + "\n"
-            elif doc.filename.lower().endswith('.txt'):
-                with open(abs_path, 'r', encoding='utf-8') as f:
-                    content += f.read() + "\n"
+            # Se o arquivo está salvo em formato binário no Banco de Dados (Prioridade)
+            if doc.file_data:
+                file_stream = io.BytesIO(doc.file_data)
+                if doc.filename.lower().endswith('.pdf'):
+                    reader = PdfReader(file_stream)
+                    for page in reader.pages:
+                        text = page.extract_text()
+                        if text: content += text + "\n"
+                elif doc.filename.lower().endswith('.txt'):
+                    content += doc.file_data.decode('utf-8', errors='ignore') + "\n"
+            
+            # Fallback para o disco local (caso o registro antigo não tenha dados binários)
+            else:
+                path_parts = doc.filepath.split('documentos/')
+                rel_path = path_parts[-1] if len(path_parts) > 1 else doc.filepath
+                abs_path = os.path.join(app.config['UPLOAD_FOLDER'], rel_path)
+                
+                if os.path.exists(abs_path):
+                    if doc.filename.lower().endswith('.pdf'):
+                        reader = PdfReader(abs_path)
+                        for page in reader.pages:
+                            text = page.extract_text()
+                            if text: content += text + "\n"
+                    elif doc.filename.lower().endswith('.txt'):
+                        with open(abs_path, 'r', encoding='utf-8') as f:
+                            content += f.read() + "\n"
             
             if content:
                 texto_consolidado += f"\n[DOC: {doc.filename} | ID: {doc.id}]\n{content}\n"
@@ -140,7 +153,7 @@ def extrair_conteudo_documentos(company_id):
     return texto_consolidado
 
 def obter_resposta_ia(pergunta, base_conhecimento, user_name, company_name):
-    """Chama o Gemini com o contexto dos documentos."""
+    """Chama o Gemini com o contexto extraído."""
     model_list = ['models/gemini-2.5-flash', 'models/gemini-1.5-flash']
     safety_settings = {cat: HarmBlockThreshold.BLOCK_NONE for cat in [
         HarmCategory.HARM_CATEGORY_HARASSMENT, 
@@ -152,7 +165,7 @@ def obter_resposta_ia(pergunta, base_conhecimento, user_name, company_name):
     prompt_sistema = f"""
     Identidade: Guia Zortea IA Solutions da empresa {company_name}.
     Usuário: {user_name}.
-    Instrução: Use os documentos abaixo para responder. Se não souber, diga que não encontrou nos manuais.
+    Instrução: Use os documentos abaixo para responder de forma direta e profissional. Se não encontrar nos manuais, informe educadamente que não possui essa informação específica no momento.
     Documentos: {base_conhecimento}
     """
 
@@ -164,7 +177,7 @@ def obter_resposta_ia(pergunta, base_conhecimento, user_name, company_name):
         except Exception as e:
             print(f"--- DEBUG IA: Falha no modelo {model_name}: {str(e)}")
             continue
-    return "Desculpe, estou com dificuldades técnicas para acessar meu cérebro agora."
+    return "Desculpe, estou com dificuldades técnicas para acessar minha base de conhecimento agora."
 
 # ==========================================
 # 5. ROTAS DE NAVEGAÇÃO E AUTENTICAÇÃO
@@ -242,9 +255,23 @@ def ask_chatbot():
 @app.route('/documentos/<path:filename>')
 @login_required
 def servir_documento(filename): 
-    # Log de diagnóstico para rastrear o acesso ao arquivo no Render
+    """Serve o arquivo diretamente do Banco de Dados PostgreSQL (Garante 100% de persistência)."""
+    # Reconstrói a busca com base no nome do arquivo
+    simple_filename = os.path.basename(filename)
+    doc = Document.query.filter_by(filename=simple_filename, company_id=session.get('company_id')).first()
+    
+    if doc and doc.file_data:
+        mimetype = 'application/pdf' if doc.filename.lower().endswith('.pdf') else 'text/plain'
+        return send_file(
+            io.BytesIO(doc.file_data),
+            mimetype=mimetype,
+            as_attachment=False,
+            download_name=doc.filename
+        )
+    
+    # Fallback caso o arquivo esteja em disco (compatibilidade antiga)
     abs_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-    print(f"--- DEBUG FILE: Acessando {filename} em {abs_path}")
+    print(f"--- DEBUG FILE FALLBACK: Acessando em disco {filename} em {abs_path}")
     return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
 
 @app.route('/processo/<int:doc_id>')
@@ -260,7 +287,7 @@ def visualizar_processo(doc_id):
         return redirect(url_for('index'))
 
 # ==========================================
-# 7. ROTAS ADMINISTRATIVAS (REFORÇADAS)
+# 7. ROTAS ADMINISTRATIVAS (UPLOAD PARA BANCO ATIVADO)
 # ==========================================
 
 @app.route('/admin')
@@ -376,15 +403,28 @@ def upload_doc():
             abs_dir = os.path.join(app.config['UPLOAD_FOLDER'], rel_dir)
             
             os.makedirs(abs_dir, exist_ok=True)
-            file.save(os.path.join(abs_dir, filename))
             
-            # Caminho salvo para ser compatível com a rota /documentos/
+            # Lê o conteúdo binário antes de salvar
+            file_bytes = file.read()
+            
+            # Grava temporariamente em disco (redundância)
+            with open(os.path.join(abs_dir, filename), 'wb') as f:
+                f.write(file_bytes)
+            
+            # Caminho de registro herdado
             db_path = f"documentos/{rel_dir}/{filename}".replace('\\', '/')
             
-            db_path_absolute = Document(company_id=company_id, filename=filename, filepath=db_path, sector=sector)
-            db.session.add(db_path_absolute)
+            # Nova instância do Documento contendo os BYTES na coluna "file_data"
+            db_doc = Document(
+                company_id=company_id, 
+                filename=filename, 
+                filepath=db_path, 
+                sector=sector,
+                file_data=file_bytes
+            )
+            db.session.add(db_doc)
             db.session.commit()
-            flash("Documento enviado com sucesso!")
+            flash("Documento enviado e persistido no Banco de Dados com sucesso!")
         return redirect(url_for('admin_processos'))
     except Exception as e:
         db.session.rollback()
@@ -410,6 +450,7 @@ def delete_doc(doc_id):
             
             db.session.delete(doc)
             db.session.commit()
+            flash("Documento excluído.")
         return redirect(url_for('admin_processos'))
     except Exception as e:
         db.session.rollback()
